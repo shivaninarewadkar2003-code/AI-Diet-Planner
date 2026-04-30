@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Assessment - MealMate AI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            height: 100%;
+        }
+        body {
+            background-image: url('{{ url_for("static", filename="images/assessment_image.png") }}');
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            height: 100%;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .assessment-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            position: relative;
+            z-index: 1;
+            padding: 2rem;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        h2 { color: #1f2937; margin-bottom: 0.5rem; }
+        .subtitle { color: #6b7280; margin-bottom: 2rem; }
+        .step { display: none; }
+        .step.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .form-group { margin-bottom: 1.5rem; position: relative; }
+        .form-group.required label::after {
+            content: ' *';
+            color: #ef4444;
+            font-weight: bold;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+        }
+        .btn-next, .btn-prev, .btn-submit {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-next, .btn-submit {
+            background: #10b981;
+            color: white;
+        }
+        .btn-next:hover, .btn-submit:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+        .btn-prev {
+            background: #6b7280;
+            color: white;
+        }
+        .btn-prev:hover {
+            background: #4b5563;
+            transform: translateY(-2px);
+        }
+        .progress-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+        .progress-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: #e5e7eb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            font-weight: bold;
+            color: #6b7280;
+        }
+        .progress-step.active .step-number {
+            background: #10b981;
+            color: white;
+        }
+        .progress-step.completed .step-number {
+            background: #059669;
+            color: white;
+        }
+        .step-label {
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+            color: #6b7280;
+        }
+        .progress-step.active .step-label {
+            color: #10b981;
+            font-weight: bold;
+        }
+        .bmi-card {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        .bmi-card h3 {
+            color: #065f46;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+        .metric-row {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 1rem;
+        }
+        .metric-label {
+            font-size: 0.7rem;
+            color: #065f46;
+            font-weight: 600;
+        }
+        .metric-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #065f46;
+        }
+        .bmi-result {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 0.5rem;
+        }
+        
+        /* Autocomplete Styles */
+        .autocomplete-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .suggestions-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .suggestion-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .suggestion-item:hover {
+            background: #f0fdf4;
+        }
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+        .tag {
+            background: #10b981;
+            color: white;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .tag-remove {
+            cursor: pointer;
+            font-weight: bold;
+            background: rgba(255,255,255,0.2);
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ingredient-count-badge {
+            background: #10b981;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            margin-left: 8px;
+        }
+        .error-message-box {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+            border-left: 4px solid #dc2626;
+        }
+        @media (max-width: 768px) {
+            .form-row { grid-template-columns: 1fr; }
+            .assessment-container { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="assessment-container">
+        <div class="glass-card">
+            <h2>Health Assessment</h2>
+            <p class="subtitle">Tell us about yourself to get a personalized meal plan</p>
+            
+            <div class="progress-bar">
+                <div class="progress-step active" id="step1Progress"><div class="step-number">1</div><div class="step-label">Basic Info</div></div>
+                <div class="progress-step" id="step2Progress"><div class="step-number">2</div><div class="step-label">Health Info</div></div>
+                <div class="progress-step" id="step3Progress"><div class="step-number">3</div><div class="step-label">Lifestyle</div></div>
+                <div class="progress-step" id="step4Progress"><div class="step-number">4</div><div class="step-label">Nutrition</div></div>
+            </div>
+            
+            <form method="POST" action="/api/submit-assessment" id="assessmentForm">
+                <!-- Step 1: Basic Info -->
+                <div class="step active" id="step1">
+                    <div class="form-row">
+                        <div class="form-group required"><label>Age</label><input type="number" name="age" id="age" required placeholder="e.g., 28" oninput="calculateBMI()"></div>
+                        <div class="form-group required"><label>Gender</label><select name="gender" id="gender" required onchange="calculateBMI()"><option value="">Select</option><option value="M">Male</option><option value="F">Female</option></select></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group required"><label>Height (cm)</label><input type="number" step="0.1" name="height_cm" id="height" required placeholder="e.g., 165" oninput="calculateBMI()"></div>
+                        <div class="form-group required"><label>Weight (kg)</label><input type="number" step="0.1" name="weight_kg" id="weight" required placeholder="e.g., 68" oninput="calculateBMI()"></div>
+                    </div>
+                    <div id="bmiCard" class="bmi-card" style="display: none;">
+                        <h3>📊 Body Metrics</h3>
+                        <div class="metric-row"><div><div class="metric-label">HEIGHT</div><div class="metric-value" id="displayHeight">—</div></div><div><div class="metric-label">WEIGHT</div><div class="metric-value" id="displayWeight">—</div></div></div>
+                        <div class="bmi-result"><div id="bmiResult">Estimated BMI: —</div><div id="bmiAdvice"></div></div>
+                    </div>
+                    <div class="buttons"><button type="button" class="btn-next" onclick="nextStep(1)">Continue →</button></div>
+                </div>
+                
+                <!-- Step 2: Health Info -->
+                <div class="step" id="step2">
+                    <div class="form-group"><label>Medical Conditions</label><div class="autocomplete-wrapper"><input type="text" id="medical_input" class="autocomplete-input" placeholder="Type to search medical conditions..."><div class="suggestions-dropdown" id="medical_suggestions"></div></div><input type="hidden" id="medical_hidden" name="diseases"><div class="tags-container" id="medical_tags"></div></div>
+                    <div class="form-group"><label>Allergies</label><div class="autocomplete-wrapper"><input type="text" id="allergies_input" class="autocomplete-input" placeholder="Type to search allergies..."><div class="suggestions-dropdown" id="allergies_suggestions"></div></div><input type="hidden" id="allergies_hidden" name="allergies"><div class="tags-container" id="allergies_tags"></div></div>
+                    <div class="form-group"><label>Medications</label><div class="autocomplete-wrapper"><input type="text" id="medications_input" class="autocomplete-input" placeholder="Type to search medications..."><div class="suggestions-dropdown" id="medications_suggestions"></div></div><input type="hidden" id="medications_hidden" name="medications"><div class="tags-container" id="medications_tags"></div></div>
+                    <div class="buttons"><button type="button" class="btn-prev" onclick="prevStep(2)">← Previous</button><button type="button" class="btn-next" onclick="nextStep(2)">Next →</button></div>
+                </div>
+                
+                <!-- Step 3: Lifestyle -->
+                <div class="step" id="step3">
+                    <div class="form-group"><label>Activity Level</label><select name="activity_level" required><option value="sedentary">Sedentary</option><option value="light">Light (1-3 days/week)</option><option value="moderate">Moderate (3-5 days/week)</option><option value="active">Active (6-7 days/week)</option><option value="very_active">Very Active</option></select></div>
+                    <div class="form-group"><label>Sleep Quality</label><select name="sleep_quality"><option value="poor">Poor</option><option value="average">Average</option><option value="good">Good</option><option value="excellent">Excellent</option></select></div>
+                    <div class="form-group"><label>Diet Preference</label><select name="diet_preference" required>
+                        <option value="">Select your diet preference</option>
+                        <option value="vegetarian">🥬 Vegetarian (No meat, eggs allowed)</option>
+                        <option value="non-vegetarian">🍗 Non-Vegetarian (Includes meat, eggs)</option>
+                        <option value="vegan">🌱 Vegan (No animal products)</option>
+                        <option value="both">🍽️ Both (Vegetarian & Non-Veg)</option>
+                        <option value="pescatarian">🐟 Pescatarian (Fish allowed)</option>
+                        <option value="keto">🥑 Keto (Low carb, high fat)</option>
+                        <option value="jain">🌸 Jain (No root vegetables, strict vegetarian)</option>
+                    </select></div>
+                    <div class="form-group"><label>🍽️ Meal Preference</label><select name="meal_preference" required><option value="2_meals">2 Meals per day</option><option value="3_meals" selected>3 Meals per day</option><option value="4_meals">4 Meals per day</option><option value="5_meals">5 Meals per day</option></select></div>
+                    <div class="form-group"><label>Disliked Foods</label><div class="autocomplete-wrapper"><input type="text" id="disliked_input" class="autocomplete-input" placeholder="Type to search disliked foods..."><div class="suggestions-dropdown" id="disliked_suggestions"></div></div><input type="hidden" id="disliked_hidden" name="disliked_foods"><div class="tags-container" id="disliked_tags"></div></div>
+                    <div class="form-group"><label>Preferred Cuisine</label><div class="autocomplete-wrapper"><input type="text" id="cuisine_input" class="autocomplete-input" placeholder="Type to search cuisines..."><div class="suggestions-dropdown" id="cuisine_suggestions"></div></div><input type="hidden" id="cuisine_hidden" name="cuisine_preference"><div class="tags-container" id="cuisine_tags"></div></div>
+                    <div class="form-group"><label>📅 Plan Duration</label><select name="plan_duration" required>
+                        <option value="7">7 Days (1 Week)</option>
+                        <option value="14">14 Days (2 Weeks)</option>
+                        <option value="21">21 Days (3 Weeks)</option>
+                        <option value="28">28 Days (4 Weeks)</option>
+                        <option value="30" selected>30 Days (1 Month)</option>
+                        <option value="45">45 Days (1.5 Months)</option>
+                    </select></div>
+                    <div class="buttons"><button type="button" class="btn-prev" onclick="prevStep(3)">← Previous</button><button type="button" class="btn-next" onclick="nextStep(3)">Next →</button></div>
+                </div>
+                
+                <!-- Step 4: Nutrition (Removed Protein, Carbs, Fats) -->
+                <div class="step" id="step4">
+                    <div class="form-row">
+                        <div class="form-group"><label>Preferred Fruits</label><div class="autocomplete-wrapper"><input type="text" id="fruit_input" class="autocomplete-input" placeholder="Type to search fruits..."><div class="suggestions-dropdown" id="fruit_suggestions"></div></div><input type="hidden" id="fruit_hidden" name="preferred_fruits"><div class="tags-container" id="fruit_tags"></div></div>
+                        <div class="form-group"><label>Preferred Vegetables</label><div class="autocomplete-wrapper"><input type="text" id="veg_input" class="autocomplete-input" placeholder="Type to search vegetables..."><div class="suggestions-dropdown" id="veg_suggestions"></div></div><input type="hidden" id="veg_hidden" name="preferred_vegetables"><div class="tags-container" id="veg_tags"></div></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Available Ingredients at Home</label>
+                        <input type="text" 
+                               id="available_ingredients" 
+                               name="available_ingredients" 
+                               class="form-control" 
+                               placeholder="e.g., Rice, Tomatoes, Eggs, Oil, Salt, Spices"
+                               style="width: 100%; padding: 0.75rem; border-radius: 12px; border: 1px solid #d1d5db;">
+                        <small style="color: #6b7280; display: block; margin-top: 5px;">
+                            💡 Simply type your ingredients separated by commas
+                        </small>
+                    </div>
+                    <div class="buttons"><button type="button" class="btn-prev" onclick="prevStep(4)">← Previous</button><button type="submit" class="btn-submit">Complete Assessment ✨</button></div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let currentStep = 1;
+        
+        // Navigation functions
+        function nextStep(step) {
+            if (step === 1) {
+                const age = document.getElementById('age').value;
+                const gender = document.getElementById('gender').value;
+                const height = document.getElementById('height').value;
+                const weight = document.getElementById('weight').value;
+                if (!age || !gender || !height || !weight) {
+                    alert('Please fill all required fields');
+                    return;
+                }
+            }
+            document.getElementById(`step${step}`).classList.remove('active');
+            currentStep = step + 1;
+            document.getElementById(`step${currentStep}`).classList.add('active');
+            updateProgress();
+        }
+        
+        function prevStep(step) {
+            document.getElementById(`step${step}`).classList.remove('active');
+            currentStep = step - 1;
+            document.getElementById(`step${currentStep}`).classList.add('active');
+            updateProgress();
+        }
+        
+        function updateProgress() {
+            for (let i = 1; i <= 4; i++) {
+                const prog = document.getElementById(`step${i}Progress`);
+                if (i < currentStep) { prog.classList.add('completed'); prog.classList.remove('active'); }
+                else if (i === currentStep) { prog.classList.add('active'); prog.classList.remove('completed'); }
+                else { prog.classList.remove('active', 'completed'); }
+            }
+        }
+        
+        // BMI Calculator
+        function calculateBMI() {
+            const height = parseFloat(document.getElementById('height').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            const bmiCard = document.getElementById('bmiCard');
+            if (height && weight && height > 0 && weight > 0) {
+                const bmi = (weight / ((height/100)**2)).toFixed(1);
+                document.getElementById('displayHeight').textContent = height;
+                document.getElementById('displayWeight').textContent = weight;
+                let category = '', advice = '';
+                if (bmi < 18.5) { category = 'Underweight'; advice = 'Focus on nutrient-dense foods'; }
+                else if (bmi < 25) { category = 'Healthy Weight'; advice = 'Great job! Maintain balance'; }
+                else if (bmi < 30) { category = 'Overweight'; advice = 'Small calorie deficit for progress'; }
+                else { category = 'Obese'; advice = 'Consult a doctor for personalized plan'; }
+                document.getElementById('bmiResult').innerHTML = `Estimated BMI: <strong>${bmi} — ${category}</strong>`;
+                document.getElementById('bmiAdvice').textContent = advice;
+                bmiCard.style.display = 'block';
+            } else { bmiCard.style.display = 'none'; }
+        }
+        
+        // ========== UNIVERSAL AUTOCOMPLETE FUNCTION ==========
+function setupAutocomplete(inputId, suggestionsId, hiddenId, tagsId, apiUrl, minChars = 2) {
+    const input = document.getElementById(inputId);
+    const suggestionsDiv = document.getElementById(suggestionsId);
+    const hiddenInput = document.getElementById(hiddenId);
+    const tagsContainer = document.getElementById(tagsId);
+    
+    if (!input) {
+        console.warn(`Input not found: ${inputId}`);
+        return;
+    }
+    
+    let items = [];
+    if (hiddenInput && hiddenInput.value) {
+        items = hiddenInput.value.split(',').map(s => s.trim()).filter(s => s);
+        renderTags();
+    }
+    
+    function renderTags() {
+        if (!tagsContainer) return;
+        tagsContainer.innerHTML = '';
+        items.forEach(item => {
+            const tag = document.createElement('span');
+            tag.className = 'tag';
+            tag.innerHTML = `${escapeHtml(item)} <span class="tag-remove" data-value="${escapeHtml(item)}">×</span>`;
+            tagsContainer.appendChild(tag);
+        });
+        
+        // Add click handlers for remove buttons
+        document.querySelectorAll(`#${tagsId} .tag-remove`).forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const value = btn.getAttribute('data-value');
+                items = items.filter(i => i !== value);
+                if (hiddenInput) hiddenInput.value = items.join(',');
+                renderTags();
+            });
+        });
+    }
+    
+    async function fetchSuggestions(query) {
+        if (!query || query.length < minChars) {
+            suggestionsDiv.style.display = 'none';
+            return;
+        }
+        
+        try {
+            suggestionsDiv.innerHTML = '<div class="suggestion-item">🔍 Searching...</div>';
+            suggestionsDiv.style.display = 'block';
+            
+            const response = await fetch(`${apiUrl}?q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            
+            // Handle different response formats
+            let suggestions = [];
+            if (Array.isArray(data)) {
+                suggestions = data;
+            } else if (data.success && Array.isArray(data.results)) {
+                suggestions = data.results;
+            } else if (data.results && Array.isArray(data.results)) {
+                suggestions = data.results;
+            } else {
+                suggestions = [];
+            }
+            
+            if (suggestions.length > 0) {
+                suggestionsDiv.innerHTML = '';
+                suggestions.slice(0, 15).forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.textContent = item;
+                    div.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (!items.includes(item)) {
+                            items.push(item);
+                            if (hiddenInput) hiddenInput.value = items.join(',');
+                            renderTags();
+                        }
+                        input.value = '';
+                        suggestionsDiv.style.display = 'none';
+                        setTimeout(() => input.focus(), 100);
+                    };
+                    suggestionsDiv.appendChild(div);
+                });
+                suggestionsDiv.style.display = 'block';
+            } else {
+                suggestionsDiv.innerHTML = `<div class="suggestion-item">❌ No results found for "${escapeHtml(query)}"</div>`;
+                suggestionsDiv.style.display = 'block';
+            }
+        } catch (error) {
+            console.error(`Error fetching ${apiUrl}:`, error);
+            suggestionsDiv.innerHTML = '<div class="suggestion-item">⚠️ Error loading data. Please try again.</div>';
+            suggestionsDiv.style.display = 'block';
+        }
+    }
+    
+    let timeout;
+    input.addEventListener('input', (e) => {
+        clearTimeout(timeout);
+        const query = e.target.value.trim();
+        timeout = setTimeout(() => fetchSuggestions(query), 300);
+    });
+    
+    input.addEventListener('blur', () => {
+        setTimeout(() => {
+            suggestionsDiv.style.display = 'none';
+        }, 200);
+    });
+    
+    input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && input.value.trim()) {
+            e.preventDefault();
+            const value = input.value.trim();
+            if (!items.includes(value)) {
+                items.push(value);
+                if (hiddenInput) hiddenInput.value = items.join(',');
+                renderTags();
+            }
+            input.value = '';
+            suggestionsDiv.style.display = 'none';
+        }
+    });
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+        
+        // ========== SETUP FOR AVAILABLE INGREDIENTS ==========
+        function setupAvailableIngredients() {
+            const input = document.getElementById('available_ingredients');
+            if (!input) return;
+            
+            // Simple text input - no autocomplete needed, just comma separated
+            console.log('✅ Available ingredients field ready');
+        }
+        
+        // Load ingredient count
+        async function loadIngredientCount() {
+            try {
+                const response = await fetch('/api/all-ingredients');
+                const data = await response.json();
+                if (data.success) {
+                    const badge = document.getElementById('ingredientCount');
+                    if (badge) badge.textContent = `${data.total}+ items`;
+                    console.log(`✅ Loaded ${data.total} ingredients`);
+                }
+            } catch (error) {
+                console.error('Error loading count:', error);
+                const badge = document.getElementById('ingredientCount');
+                if (badge) badge.textContent = '500+ items';
+            }
+        }
+        
+        // Initialize all autocomplete fields when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("✅ Assessment page loaded, initializing autocomplete...");
+    
+    // Step 2 - Health Info
+    setupAutocomplete('medical_input', 'medical_suggestions', 'medical_hidden', 'medical_tags', '/autocomplete/medical', 2);
+    setupAutocomplete('allergies_input', 'allergies_suggestions', 'allergies_hidden', 'allergies_tags', '/autocomplete/allergies', 2);
+    setupAutocomplete('medications_input', 'medications_suggestions', 'medications_hidden', 'medications_tags', '/autocomplete/medications', 2);
+    
+    // Step 3 - Lifestyle
+    setupAutocomplete('disliked_input', 'disliked_suggestions', 'disliked_hidden', 'disliked_tags', '/autocomplete/disliked-foods', 2);
+    setupAutocomplete('cuisine_input', 'cuisine_suggestions', 'cuisine_hidden', 'cuisine_tags', '/autocomplete/cuisines', 2);
+    
+    // Step 4 - Nutrition (Only Fruits & Vegetables)
+    setupAutocomplete('fruit_input', 'fruit_suggestions', 'fruit_hidden', 'fruit_tags', '/autocomplete/fruits', 2);
+    setupAutocomplete('veg_input', 'veg_suggestions', 'veg_hidden', 'veg_tags', '/autocomplete/vegetables', 2);
+    
+    // BMI Calculator
+    const heightInput = document.getElementById('height');
+    const weightInput = document.getElementById('weight');
+    if (heightInput && weightInput) {
+        heightInput.addEventListener('input', calculateBMI);
+        weightInput.addEventListener('input', calculateBMI);
+    }
+    
+    console.log('✅ All autocomplete fields initialized!');
+});
+    </script>
+</body>
+</html>

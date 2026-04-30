@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MealMate AI{% endblock %}</title>
+    {% block extra_head %}{% endblock %}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Light Mode (Default) */
+        :root {
+            --bg-primary: #f0fdf4;
+            --bg-secondary: #ffffff;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --card-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --sidebar-bg: linear-gradient(180deg, #064e3b 0%, #065f46 100%);
+            --sidebar-text: white;
+            --nav-hover: rgba(255,255,255,0.15);
+            --stat-card-bg: white;
+            --progress-bg: #e5e7eb;
+            --input-bg: white;
+            --input-border: #d1d5db;
+            --welcome-bg: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            --ring-color: rgba(5, 150, 105, 0.3);
+            --notification-bg: white;
+            --notification-hover: #f3f4f6;
+            --chat-user-msg: #10b981;
+            --chat-bot-msg: #e5e7eb;
+            /* Accent color variable - will be overridden by user selection */
+            --accent-color: #10b981;
+            --accent-gradient: linear-gradient(135deg, #10b981, #10b981CC);
+        }
+
+        /* Dark Mode */
+        body.dark-mode {
+            --bg-primary: #0a0f1c;
+            --bg-secondary: #1a1f2e;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --card-bg: #1a1f2e;
+            --border-color: #2d3748;
+            --sidebar-bg: linear-gradient(180deg, #0a0f1c 0%, #0f1423 100%);
+            --sidebar-text: #e5e7eb;
+            --nav-hover: rgba(5,150,105,0.2);
+            --stat-card-bg: #1a1f2e;
+            --progress-bg: #2d3748;
+            --input-bg: #2d3748;
+            --input-border: #4a5568;
+            --welcome-bg: linear-gradient(135deg, #0f1423 0%, #1a1f2e 100%);
+            --ring-color: rgba(5, 150, 105, 0.5);
+            --notification-bg: #1a1f2e;
+            --notification-hover: #2d3748;
+            --chat-user-msg: #059669;
+            --chat-bot-msg: #2d3748;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--sidebar-bg);
+            color: var(--sidebar-text);
+            padding: 2rem 1.5rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 800;
+        }
+
+        .user-info {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .user-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .user-email {
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+
+        .nav-section {
+            margin-bottom: 2rem;
+        }
+
+        .nav-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.6;
+            margin-bottom: 0.75rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.7rem 0.75rem;
+            margin: 0.25rem 0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: var(--nav-hover);
+            color: white;
+        }
+
+        .nav-icon {
+            font-size: 1.2rem;
+            width: 24px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+        }
+
+        /* Top Bar with Notification Bell */
+        .top-bar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+        }
+
+        .notification-bell:hover {
+            background: var(--notification-hover);
+            transform: scale(1.05);
+        }
+
+        .notification-bell .bell-icon {
+            font-size: 1.5rem;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background: #ef4444;
+            color: white;
+            font-size: 0.6rem;
+            font-weight: bold;
+            padding: 2px 5px;
+            border-radius: 50%;
+            min-width: 16px;
+            text-align: center;
+            display: none;
+        }
+
+        /* Notification Dropdown */
+        .notification-dropdown {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            width: 380px;
+            max-height: 500px;
+            background: var(--notification-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            border: 1px solid var(--border-color);
+            z-index: 1000;
+            display: none;
+            overflow: hidden;
+            animation: slideDown 0.3s ease;
+        }
+
+        .notification-dropdown.show {
+            display: block;
+        }
+
+        .notification-header {
+            padding: 1rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text-primary);
+            background: var(--notification-bg);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notification-header button {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+        }
+
+        .notification-header button:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .notification-list {
+            max-height: 450px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .notification-item:hover {
+            background: var(--notification-hover);
+        }
+
+        .notification-item.unread {
+            background: rgba(5, 150, 105, 0.08);
+        }
+
+        .notification-item.unread:hover {
+            background: rgba(5, 150, 105, 0.12);
+        }
+
+        .notification-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 0.2rem;
+            color: var(--text-primary);
+        }
+
+        .notification-message {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.2rem;
+            line-height: 1.3;
+        }
+
+        .notification-time {
+            font-size: 0.6rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-notifications {
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Theme Toggle Button in Sidebar */
+        .theme-toggle-sidebar {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50px;
+            padding: 0.6rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s;
+            margin-top: 2rem;
+        }
+
+        .theme-toggle-sidebar:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .theme-toggle-sidebar span {
+            font-size: 0.8rem;
+            color: white;
+        }
+
+        .theme-icon-sidebar {
+            font-size: 1.2rem;
+        }
+
+        /* Chatbot Widget Styles */
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============ ACCENT COLOR GLOBAL STYLES ============ */
+        /* All buttons across all pages get accent color */
+        button:not(.no-accent):not(.theme-toggle-sidebar):not(.nav-item), 
+        .redeem-btn, 
+        .complete-btn,
+        .accent-button,
+        .btn-primary,
+        .submit-btn,
+        .update-btn,
+        .save-btn,
+        [onclick*="addWater"],
+        [onclick*="redeemReward"],
+        [onclick*="markMealComplete"],
+        [onclick*="regeneratePlan"],
+        #regenerateBtn,
+        .complete-btn:not(:disabled),
+        .redeem-btn:not(:disabled) {
+            background: var(--accent-gradient) !important;
+            transition: all 0.2s ease;
+            border: none;
+        }
+        
+        button:not(.no-accent):hover, 
+        .redeem-btn:hover, 
+        .complete-btn:hover {
+            filter: brightness(1.05);
+            transform: translateY(-1px);
+            cursor: pointer;
+        }
+        
+        /* Replace button special styling (outline style) */
+        .replace-btn {
+            background: transparent !important;
+            border: 1px solid var(--accent-color) !important;
+            color: var(--accent-color) !important;
+        }
+        
+        .replace-btn:hover {
+            background: var(--accent-color) !important;
+            color: white !important;
+        }
+        
+        /* Disabled buttons */
+        button:disabled, 
+        .complete-btn:disabled,
+        .redeem-btn:disabled {
+            background: #9ca3af !important;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        /* Links and accent text */
+        a:not(.nav-item):not(.sidebar-link), 
+        .accent-text {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+        
+        a:not(.nav-item):hover {
+            text-decoration: underline;
+        }
+        
+        .accent-border {
+            border-color: var(--accent-color);
+        }
+        
+        .accent-bg {
+            background: var(--accent-gradient);
+        }
+        
+        /* Checkbox and radio accent */
+        input[type="checkbox"]:checked,
+        input[type="radio"]:checked {
+            accent-color: var(--accent-color);
+        }
+        
+        /* Focus rings */
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent-color);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 20%, transparent);
+        }
+
+        /* Dark mode specific overrides */
+        body.dark-mode .stat-card,
+        body.dark-mode .card,
+        body.dark-mode .progress-chart-card,
+        body.dark-mode .water-tracking-card,
+        body.dark-mode .week-nav,
+        body.dark-mode .day-card,
+        body.dark-mode .metric-card,
+        body.dark-mode .ring-card,
+        body.dark-mode .alert-card,
+        body.dark-mode .progress-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+        }
+
+        body.dark-mode .stat-card:hover,
+        body.dark-mode .card:hover {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        body.dark-mode .welcome-banner {
+            background: var(--welcome-bg);
+            border: 1px solid rgba(5,150,105,0.3);
+        }
+
+        body.dark-mode .progress-bar-bg {
+            background: var(--progress-bg);
+        }
+
+        body.dark-mode .date-badge {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        body.dark-mode .page-title {
+            color: var(--accent-color);
+        }
+
+        body.dark-mode .stat-label {
+            color: var(--text-secondary);
+        }
+
+        body.dark-mode input,
+        body.dark-mode select,
+        body.dark-mode textarea {
+            background: var(--input-bg);
+            border-color: var(--input-border);
+            color: var(--text-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 80px;
+                padding: 1rem 0.5rem;
+            }
+            .sidebar .logo-text, 
+            .sidebar .user-info, 
+            .sidebar .nav-title, 
+            .sidebar .nav-item span:not(.nav-icon) {
+                display: none;
+            }
+            .main-content {
+                margin-left: 80px;
+            }
+            .theme-toggle-sidebar span {
+                display: none;
+            }
+            .notification-dropdown {
+                width: 320px;
+                right: -20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem;
+            }
+            .notification-dropdown {
+                width: 300px;
+                right: -30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <span class="logo-icon">🥗</span>
+                <span class="logo-text">MealMate AI</span>
+            </div>
+            
+            <div class="user-info">
+                <div class="user-name">{% if user and user.name %}{{ user.name }}{% else %}Guest{% endif %}</div>
+                <div class="user-email">{% if user and user.email %}{{ user.email }}{% else %}guest@example.com{% endif %}</div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-title">MAIN</div>
+                <a href="/dashboard" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/meal-planner" class="nav-item {% if request.endpoint == 'meal_planner' %}active{% endif %}">
+                    <span class="nav-icon">🍽️</span>
+                    <span>Meal Planner</span>
+                </a>
+                
+                <a href="/profile" class="nav-item">
+                    <span class="nav-icon">👤</span>
+                    <span>Profile</span>
+                </a>
+            </div>
+
+            <!-- MEALS & RECIPES Section -->
+            <div class="nav-section">
+                <div class="nav-title">MEALS & RECIPES</div>
+                <a href="/recipes" class="nav-item">
+                    <span class="nav-icon">📖</span>
+                    <span>Recipes Library</span>
+                </a>
+                 
+               <a href="/shopping" class="nav-item">
+                    <span class="nav-icon">🛒</span>
+                    <span>Shopping</span>
+                </a>
+                <a href="/fitness" class="nav-item">
+                    <span class="nav-icon">💪</span>
+                    <span>Fitness</span>
+                </a>
+            </div>
+
+            <!-- SUPPORT Section -->
+            <div class="nav-section">
+                <div class="nav-title">SUPPORT</div>
+                <a href="/help-faq" class="nav-item">
+                    <span class="nav-icon">❓</span>
+                    <span>Help & FAQ</span>
+                </a>
+                <a href="/settings" class="nav-item">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Settings</span>
+                </a>
+                <a href="/logout" class="nav-item">
+                    <span class="nav-icon">🚪</span>
+                    <span>Logout</span>
+                </a>
+            </div>
+
+            <!-- Theme Toggle in Sidebar -->
+            <div class="theme-toggle-sidebar" onclick="toggleTheme()">
+                <span>🌓 Dark/Light Mode</span>
+                <span class="theme-icon-sidebar" id="sidebarThemeIcon">🌙</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar with Notification Bell -->
+            <div class="top-bar">
+                <div class="notification-bell" id="notificationBell">
+                    <span class="bell-icon">🔔</span>
+                    <span class="notification-badge" id="notificationCount">0</span>
+                </div>
+                <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-header">
+                        Notifications
+                        <button onclick="clearAllNotifications()" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.7rem;">🗑️ Clear All</button>
+                    </div>
+                    <div class="notification-list" id="notificationList">
+                        <div class="empty-notifications">✨ No new notifications</div>
+                    </div>
+                </div>
+            </div>
+            
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Chatbot Widget - Floating Button (Appears on all pages) -->
+    <div style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+        <!-- Chat Button -->
+        <div id="chatButton" onclick="toggleChat()" style="background: var(--accent-gradient); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;">
+            <span style="font-size: 1.8rem;">💬</span>
+        </div>
+        
+        <!-- Chat Window -->
+        <div id="chatWindow" style="display: none; position: absolute; bottom: 70px; right: 0; width: 350px; height: 500px; background: var(--card-bg, white); border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); overflow: hidden; flex-direction: column; border: 1px solid var(--border-color, #e5e7eb);">
+            <!-- Chat Header -->
+            <div style="background: var(--accent-gradient); color: white; padding: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.2rem;">🤖</span>
+                        <strong>MealMate AI Assistant</strong>
+                    </div>
+                    <button onclick="toggleChat()" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer;">✕</button>
+                </div>
+                <p style="font-size: 0.7rem; margin: 0.25rem 0 0; opacity: 0.9;">Ask me anything about meals, health, or the app!</p>
+            </div>
+            
+            <!-- Chat Messages -->
+            <div id="chatMessages" style="flex: 1; overflow-y: auto; padding: 1rem; background: var(--bg-primary, #f9fafb);">
+                <div style="display: flex; margin-bottom: 1rem;">
+                    <div style="background: var(--chat-bot-msg, #e5e7eb); color: var(--text-primary, #1f2937); padding: 0.5rem 0.8rem; border-radius: 18px; border-bottom-left-radius: 4px; max-width: 80%;">
+                        👋 Hi! I'm your MealMate AI assistant. Ask me about:<br>
+                        • Completing meals<br>
+                        • Earning points<br>
+                        • Diet tips<br>
+                        • App features
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chat Input -->
+            <div style="padding: 1rem; background: var(--card-bg, white); border-top: 1px solid var(--border-color, #e5e7eb); display: flex; gap: 0.5rem;">
+                <input type="text" id="chatInput" placeholder="Type your question..." style="flex: 1; padding: 0.6rem; border: 1px solid var(--border-color, #e5e7eb); border-radius: 25px; outline: none; background: var(--input-bg, white); color: var(--text-primary, #1f2937);">
+                <button onclick="sendMessage()" style="background: var(--accent-color); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; transition: transform 0.2s;">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // ============ ACCENT COLOR MANAGEMENT - APPLIES TO ALL BUTTONS ==========
+        function applySavedAccentColor() {
+            const savedColor = localStorage.getItem('accent_color');
+            if (savedColor) {
+                // Set CSS variables
+                document.documentElement.style.setProperty('--accent-color', savedColor);
+                document.documentElement.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${savedColor}, ${savedColor}CC)`);
+                
+                // Apply to ALL buttons across the page
+                const allButtons = document.querySelectorAll(`
+                    button, 
+                    .redeem-btn, 
+                    .complete-btn, 
+                    .accent-button, 
+                    .btn-primary,
+                    .view-benefits-btn,
+                    [onclick*="addWater"],
+                    [onclick*="redeemReward"],
+                    [onclick*="markMealComplete"],
+                    [onclick*="regeneratePlan"],
+                    #regenerateBtn,
+                    .submit-btn,
+                    .save-btn,
+                    .update-btn
+                `);
+                
+                allButtons.forEach(btn => {
+                    if (!btn.classList.contains('no-accent') && 
+                        !btn.classList.contains('theme-toggle-sidebar') &&
+                        !btn.classList.contains('nav-item')) {
+                        if (btn.disabled) {
+                            btn.style.background = '#9ca3af';
+                        } else if (btn.classList.contains('replace-btn')) {
+                            btn.style.border = `1px solid ${savedColor}`;
+                            btn.style.color = savedColor;
+                            btn.style.background = 'transparent';
+                        } else {
+                            btn.style.background = `linear-gradient(135deg, ${savedColor}, ${savedColor}CC)`;
+                        }
+                    }
+                });
+                
+                // Handle replace buttons specifically
+                const replaceBtns = document.querySelectorAll('.replace-btn');
+                replaceBtns.forEach(btn => {
+                    btn.style.border = `1px solid ${savedColor}`;
+                    btn.style.color = savedColor;
+                    btn.style.background = 'transparent';
+                });
+                
+                // Update chat elements
+                const chatButton = document.getElementById('chatButton');
+                if (chatButton) chatButton.style.background = `linear-gradient(135deg, ${savedColor}, ${savedColor}CC)`;
+                
+                const chatHeader = document.querySelector('#chatWindow > div:first-child');
+                if (chatHeader) chatHeader.style.background = `linear-gradient(135deg, ${savedColor}, ${savedColor}CC)`;
+                
+                // Update chat send button
+                const sendBtn = document.querySelector('#chatWindow button');
+                if (sendBtn) sendBtn.style.background = savedColor;
+                
+                // Update progress bars
+                document.querySelectorAll('.progress-bar-fill, .water-progress, #mealProgress, #calorieProgress').forEach(el => {
+                    el.style.background = `linear-gradient(90deg, ${savedColor}, ${savedColor}CC)`;
+                });
+            }
+        }
+        
+        // Observe DOM changes to apply accent color to dynamically added buttons
+        function observeDOMChanges() {
+            const observer = new MutationObserver(function(mutations) {
+                let shouldUpdate = false;
+                mutations.forEach(function(mutation) {
+                    if (mutation.addedNodes.length) {
+                        shouldUpdate = true;
+                    }
+                });
+                if (shouldUpdate) {
+                    applySavedAccentColor();
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+        }
+        
+        // ============ CHATBOT FUNCTIONS ============
+        function toggleChat() {
+            const chatWindow = document.getElementById('chatWindow');
+            if (chatWindow.style.display === 'none' || chatWindow.style.display === '') {
+                chatWindow.style.display = 'flex';
+            } else {
+                chatWindow.style.display = 'none';
+            }
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            addChatMessage(message, 'user');
+            input.value = '';
+            showTypingIndicator();
+            
+            try {
+                const response = await fetch('/api/chatbot', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+                const data = await response.json();
+                hideTypingIndicator();
+                addChatMessage(data.reply, 'bot');
+            } catch (error) {
+                hideTypingIndicator();
+                addChatMessage("Sorry, I'm having trouble connecting. Please try again.", 'bot');
+            }
+        }
+        
+        function addChatMessage(text, sender) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.style.display = 'flex';
+            messageDiv.style.marginBottom = '1rem';
+            messageDiv.style.justifyContent = sender === 'user' ? 'flex-end' : 'flex-start';
+            messageDiv.style.animation = 'slideUp 0.3s ease';
+            
+            const bgColor = sender === 'user' ? 'var(--chat-user-msg, #10b981)' : 'var(--chat-bot-msg, #e5e7eb)';
+            const textColor = sender === 'user' ? 'white' : 'var(--text-primary, #1f2937)';
+            const borderRadius = sender === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px';
+            
+            messageDiv.innerHTML = `
+                <div style="background: ${bgColor}; color: ${textColor}; padding: 0.5rem 0.8rem; border-radius: ${borderRadius}; max-width: 80%; word-wrap: break-word;">
+                    ${escapeHtmlContent(text)}
+                </div>
+            `;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function escapeHtmlContent(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function showTypingIndicator() {
+            const messagesDiv = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typingIndicator';
+            typingDiv.style.display = 'flex';
+            typingDiv.style.marginBottom = '1rem';
+            typingDiv.innerHTML = `
+                <div style="background: var(--chat-bot-msg, #e5e7eb); padding: 0.5rem 1rem; border-radius: 18px; border-bottom-left-radius: 4px;">
+                    <span style="animation: pulse 1s infinite;">●</span>
+                    <span style="animation: pulse 1s infinite 0.2s;">●</span>
+                    <span style="animation: pulse 1s infinite 0.4s;">●</span>
+                </div>
+            `;
+            messagesDiv.appendChild(typingDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function hideTypingIndicator() {
+            const typingDiv = document.getElementById('typingIndicator');
+            if (typingDiv) typingDiv.remove();
+        }
+        
+        // ============ NOTIFICATION SYSTEM ============
+        let notifications = [];
+        let notificationCheckInterval = null;
+        
+        const MEAL_CONFIG = {
+            breakfast: { time: "8:00 AM", name: "Breakfast", icon: "🍳", reminderMinutes: 10, graceMinutes: 90 },
+            morning_snack: { time: "10:30 AM", name: "Morning Snack", icon: "🍌", reminderMinutes: 10, graceMinutes: 90 },
+            lunch: { time: "1:00 PM", name: "Lunch", icon: "🍲", reminderMinutes: 10, graceMinutes: 90 },
+            snack: { time: "4:00 PM", name: "Snack", icon: "🍎", reminderMinutes: 10, graceMinutes: 90 },
+            afternoon_snack: { time: "4:00 PM", name: "Afternoon Snack", icon: "🍎", reminderMinutes: 10, graceMinutes: 90 },
+            brunch: { time: "10:30 AM", name: "Brunch", icon: "🍽️", reminderMinutes: 10, graceMinutes: 90 },
+            dinner: { time: "7:00 PM", name: "Dinner", icon: "🌙", reminderMinutes: 10, graceMinutes: 90 }
+        };
+        
+        function getCurrentUserId() {
+            return window.userId || 'guest';
+        }
+        
+        function loadNotifications() {
+            const userId = getCurrentUserId();
+            const saved = localStorage.getItem(`mealmate_notifications_${userId}`);
+            if (saved) {
+                notifications = JSON.parse(saved);
+                const threeDaysAgo = new Date();
+                threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                notifications = notifications.filter(n => new Date(n.time) > threeDaysAgo);
+                saveNotifications();
+            } else {
+                notifications = [];
+            }
+            updateNotificationUI();
+        }
+        
+        function saveNotifications() {
+            const userId = getCurrentUserId();
+            localStorage.setItem(`mealmate_notifications_${userId}`, JSON.stringify(notifications));
+        }
+        
+        function clearAllNotifications() {
+            notifications = [];
+            const userId = getCurrentUserId();
+            localStorage.removeItem(`mealmate_notifications_${userId}`);
+            updateNotificationUI();
+            showToastMessage('All notifications cleared!', 'success');
+        }
+        
+        function resetNotificationsForNewUser() {
+            const currentUserId = getCurrentUserId();
+            const lastUser = sessionStorage.getItem('last_logged_in_user');
+            if (lastUser && lastUser !== currentUserId) {
+                notifications = [];
+                localStorage.removeItem(`mealmate_notifications_${currentUserId}`);
+                saveNotifications();
+                updateNotificationUI();
+            }
+            sessionStorage.setItem('last_logged_in_user', currentUserId);
+        }
+        
+        function showToastMessage(msg, type) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `position:fixed; bottom:80px; right:20px; background:${type === 'success' ? '#10b981' : '#ef4444'}; color:white; padding:10px 16px; border-radius:12px; z-index:10001; animation:slideIn 0.3s ease; font-size:0.8rem;`;
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        function addNotification(title, message, type = 'info') {
+            const icons = {
+                'warning': '⚠️', 'success': '✅', 'info': 'ℹ️', 'water': '💧',
+                'meal': '🍽️', 'reminder': '⏰', 'missed': '❌'
+            };
+            
+            const newNotification = {
+                id: Date.now(),
+                title: title,
+                message: message,
+                type: type,
+                icon: icons[type] || '📢',
+                time: new Date().toISOString(),
+                read: false
+            };
+            
+            notifications.unshift(newNotification);
+            if (notifications.length > 50) notifications = notifications.slice(0, 50);
+            saveNotifications();
+            updateNotificationUI();
+            
+            if (Notification.permission === 'granted') {
+                new Notification(title, { body: message });
+            }
+        }
+        
+        function updateNotificationUI() {
+            const unreadCount = notifications.filter(n => !n.read).length;
+            const countBadge = document.getElementById('notificationCount');
+            const notificationList = document.getElementById('notificationList');
+            
+            if (countBadge) {
+                countBadge.textContent = unreadCount;
+                countBadge.style.display = unreadCount > 0 ? 'flex' : 'none';
+            }
+            
+            if (notificationList) {
+                if (notifications.length === 0) {
+                    notificationList.innerHTML = '<div class="empty-notifications">✨ No notifications</div>';
+                } else {
+                    notificationList.innerHTML = notifications.map(notif => `
+                        <div class="notification-item ${!notif.read ? 'unread' : ''}" onclick="markNotificationRead(${notif.id})">
+                            <div class="notification-icon">${notif.icon}</div>
+                            <div class="notification-content">
+                                <div class="notification-title">${escapeHtmlContent(notif.title)}</div>
+                                <div class="notification-message">${escapeHtmlContent(notif.message)}</div>
+                                <div class="notification-time">${formatTimeAgo(notif.time)}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+        
+        function markNotificationRead(id) {
+            const notif = notifications.find(n => n.id === id);
+            if (notif && !notif.read) {
+                notif.read = true;
+                saveNotifications();
+                updateNotificationUI();
+            }
+        }
+        
+        function formatTimeAgo(isoTime) {
+            const now = new Date();
+            const time = new Date(isoTime);
+            const diffMinutes = Math.floor((now - time) / 60000);
+            if (diffMinutes < 1) return 'Just now';
+            if (diffMinutes < 60) return `${diffMinutes} min ago`;
+            if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)} hours ago`;
+            return `${Math.floor(diffMinutes / 1440)} days ago`;
+        }
+        
+        function parseTimeToMinutes(timeStr) {
+            let hour = parseInt(timeStr.split(':')[0]);
+            const minute = parseInt(timeStr.split(':')[1].split(' ')[0]);
+            const ampm = timeStr.split(' ')[1];
+            if (ampm === 'PM' && hour !== 12) hour += 12;
+            if (ampm === 'AM' && hour === 12) hour = 0;
+            return hour * 60 + minute;
+        }
+        
+        function checkMealReminders() {
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const today = now.toDateString();
+            const mealPreference = window.mealPreference || '3_meals';
+            const mealConfigs = {
+                '2_meals': ['brunch', 'dinner'], '3_meals': ['breakfast', 'lunch', 'dinner'],
+                '4_meals': ['breakfast', 'lunch', 'snack', 'dinner'], '5_meals': ['breakfast', 'morning_snack', 'lunch', 'afternoon_snack', 'dinner']
+            };
+            const userMeals = mealConfigs[mealPreference] || mealConfigs['3_meals'];
+            const sentReminders = JSON.parse(localStorage.getItem('sentMealReminders') || '{}');
+            const missedMealsSent = JSON.parse(localStorage.getItem('missedMealsSent') || '{}');
+            
+            for (const meal of userMeals) {
+                const mealInfo = MEAL_CONFIG[meal];
+                if (!mealInfo) continue;
+                const mealMinutes = parseTimeToMinutes(mealInfo.time);
+                const reminderMinutes = mealMinutes - mealInfo.reminderMinutes;
+                const graceEndMinutes = mealMinutes + mealInfo.graceMinutes;
+                const reminderKey = `${today}_${meal}_reminder`;
+                const timeKey = `${today}_${meal}_time`;
+                const missedKey = `${today}_${meal}_missed`;
+                const mealCompleted = localStorage.getItem(`meal_${today}_${meal}_completed`) === 'true';
+                
+                if (currentMinutes >= reminderMinutes && currentMinutes < mealMinutes && !sentReminders[reminderKey] && !mealCompleted) {
+                    const minutesLeft = mealMinutes - currentMinutes;
+                    addNotification(`⏰ ${mealInfo.name} Reminder`, `${mealInfo.name} (${mealInfo.time}) is in ${minutesLeft} minutes! Get ready to eat.`, 'reminder');
+                    sentReminders[reminderKey] = true;
+                    localStorage.setItem('sentMealReminders', JSON.stringify(sentReminders));
+                }
+                
+                if (currentMinutes >= mealMinutes && currentMinutes < mealMinutes + 5 && !sentReminders[timeKey] && !mealCompleted) {
+                    addNotification(`🍽️ Time for ${mealInfo.name}!`, `It's ${mealInfo.time} - Time to eat ${mealInfo.name}. Don't skip your meal!`, 'meal');
+                    sentReminders[timeKey] = true;
+                    localStorage.setItem('sentMealReminders', JSON.stringify(sentReminders));
+                }
+                
+                if (currentMinutes > graceEndMinutes && !missedMealsSent[missedKey] && !mealCompleted) {
+                    addNotification(`❌ Missed ${mealInfo.name}`, `You missed ${mealInfo.name} (${mealInfo.time}). This meal is now locked.`, 'missed');
+                    missedMealsSent[missedKey] = true;
+                    localStorage.setItem('missedMealsSent', JSON.stringify(missedMealsSent));
+                    localStorage.setItem(`meal_${today}_${meal}_locked`, 'true');
+                }
+            }
+        }
+        
+        function checkWaterReminders() {
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const today = now.toDateString();
+            const waterReminderTimes = [10 * 60, 14 * 60, 18 * 60];
+            const lastWaterReminder = JSON.parse(localStorage.getItem('lastWaterReminderShown') || '{}');
+            const userId = getCurrentUserId();
+            const lastWaterDate = localStorage.getItem(`lastWaterDate_${userId}`);
+            const hasLoggedWaterToday = lastWaterDate === today;
+            const waterLiters = parseFloat(localStorage.getItem(`waterLiters_${userId}`) || '0');
+            
+            for (const reminderTime of waterReminderTimes) {
+                const timeDiff = Math.abs(currentMinutes - reminderTime);
+                const reminderKey = `${today}_${reminderTime}`;
+                if (timeDiff <= 5 && !lastWaterReminder[reminderKey] && !hasLoggedWaterToday && waterLiters < 1.5) {
+                    addNotification('💧 Hydration Reminder', `Time to drink water! You've had ${waterLiters}L today. Aim for 2.5L.`, 'water');
+                    lastWaterReminder[reminderKey] = true;
+                    localStorage.setItem('lastWaterReminderShown', JSON.stringify(lastWaterReminder));
+                }
+            }
+        }
+        
+        function checkDailySummary() {
+            const now = new Date();
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const today = now.toDateString();
+            const summaryKey = `${today}_summary_sent`;
+            const summarySent = localStorage.getItem(summaryKey);
+            
+            if (currentMinutes >= 1260 && currentMinutes < 1280 && !summarySent) {
+                const userId = getCurrentUserId();
+                const waterLiters = parseFloat(localStorage.getItem(`waterLiters_${userId}`) || '0');
+                const completedMeals = JSON.parse(localStorage.getItem(`completedMeals_${userId}`) || '{}');
+                let mealsCompleted = 0;
+                for (const key in completedMeals) {
+                    if (completedMeals[key].completed && key.includes(today)) mealsCompleted++;
+                }
+                const mealPreference = window.mealPreference || '3_meals';
+                const totalMeals = mealPreference === '2_meals' ? 2 : mealPreference === '3_meals' ? 3 : mealPreference === '4_meals' ? 4 : 5;
+                addNotification('📊 Daily Summary', `${mealsCompleted}/${totalMeals} meals completed | ${waterLiters}/2.5L water`, 'info');
+                localStorage.setItem(summaryKey, 'sent');
+            }
+        }
+        
+        function checkProfileUpdateReminder() {
+            const userId = getCurrentUserId();
+            const lastProfileReminder = localStorage.getItem(`lastProfileReminderSent_${userId}`);
+            const today = new Date().toDateString();
+            
+            fetch('/api/get-weight-history')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.weight_history && data.weight_history.length > 0) {
+                        const lastUpdate = new Date(data.weight_history[data.weight_history.length - 1].date);
+                        const todayDate = new Date();
+                        const daysSinceUpdate = Math.floor((todayDate - lastUpdate) / (1000 * 60 * 60 * 24));
+                        
+                        if (daysSinceUpdate >= 7 && lastProfileReminder !== today) {
+                            addNotification('⚖️ Time to Update Your Weight!', `It's been ${daysSinceUpdate} days since your last weight update. Regular tracking helps you stay on target!`, 'reminder');
+                            localStorage.setItem(`lastProfileReminderSent_${userId}`, today);
+                        }
+                    } else if (lastProfileReminder !== today) {
+                        addNotification('📝 Complete Your Profile', 'Update your weight and health details to get accurate meal plans and predictions!', 'reminder');
+                        localStorage.setItem(`lastProfileReminderSent_${userId}`, today);
+                    }
+                })
+                .catch(err => console.log('Profile reminder error:', err));
+        }
+        
+        function clearOldReminderData() {
+            const userId = getCurrentUserId();
+            const today = new Date().toDateString();
+            const lastReset = localStorage.getItem(`lastReminderReset_${userId}`);
+            if (lastReset !== today) {
+                localStorage.removeItem('sentMealReminders');
+                localStorage.removeItem('missedMealsSent');
+                localStorage.removeItem('lastWaterReminderShown');
+                localStorage.setItem(`lastReminderReset_${userId}`, today);
+            }
+        }
+        
+        function checkAllReminders() {
+            try {
+                clearOldReminderData();
+                checkMealReminders();
+                checkWaterReminders();
+                checkDailySummary();
+                checkProfileUpdateReminder();
+            } catch(e) {
+                console.log('Reminder check error:', e);
+            }
+        }
+        
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+        
+        function initNotificationSystem() {
+            resetNotificationsForNewUser();
+            loadNotifications();
+            requestNotificationPermission();
+            clearOldReminderData();
+            if (notificationCheckInterval) clearInterval(notificationCheckInterval);
+            notificationCheckInterval = setInterval(checkAllReminders, 30000);
+            setTimeout(checkAllReminders, 2000);
+            
+            const bell = document.getElementById('notificationBell');
+            const dropdown = document.getElementById('notificationDropdown');
+            if (bell && dropdown) {
+                bell.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    dropdown.classList.toggle('show');
+                });
+                document.addEventListener('click', function(e) {
+                    if (!bell.contains(e.target) && !dropdown.contains(e.target)) {
+                        dropdown.classList.remove('show');
+                    }
+                });
+            }
+        }
+        
+        // Theme Toggle Functions
+        window.toggleTheme = function() {
+            const body = document.body;
+            const sidebarThemeIcon = document.getElementById('sidebarThemeIcon');
+            const isDarkMode = body.classList.contains('dark-mode');
+            if (isDarkMode) {
+                body.classList.remove('dark-mode');
+                localStorage.setItem('theme', 'light');
+                if (sidebarThemeIcon) sidebarThemeIcon.textContent = '🌙';
+            } else {
+                body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+                if (sidebarThemeIcon) sidebarThemeIcon.textContent = '☀️';
+            }
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const sidebarThemeIcon = document.getElementById('sidebarThemeIcon');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                if (sidebarThemeIcon) sidebarThemeIcon.textContent = '☀️';
+            } else {
+                document.body.classList.remove('dark-mode');
+                if (sidebarThemeIcon) sidebarThemeIcon.textContent = '🌙';
+            }
+        }
+
+        window.showComingSoon = function(featureName) {
+            const popup = document.createElement('div');
+            popup.innerHTML = `
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);" onclick="this.remove()">
+                    <div style="background: var(--card-bg, white); border-radius: 24px; padding: 2rem; max-width: 350px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: popupFadeIn 0.3s ease; border: 1px solid var(--border-color, #e5e7eb);" onclick="event.stopPropagation()">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🚧</div>
+                        <h3 style="color: var(--text-primary, #1f2937); margin-bottom: 0.5rem;">Coming Soon!</h3>
+                        <p style="color: var(--text-secondary, #6b7280); margin-bottom: 1rem;">The <strong>${featureName}</strong> feature is currently under development.</p>
+                        <button onclick="this.closest('div').parentElement.remove()" style="background: var(--accent-color); color: white; border: none; padding: 0.5rem 1.5rem; border-radius: 12px; font-size: 0.9rem; cursor: pointer; font-weight: 600;">Got it</button>
+                    </div>
+                </div>
+            `;
+            if (!document.querySelector('#popup-style')) {
+                const style = document.createElement('style');
+                style.id = 'popup-style';
+                style.textContent = `@keyframes popupFadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }`;
+                document.head.appendChild(style);
+            }
+            document.body.appendChild(popup);
+        }
+
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTheme();
+            initNotificationSystem();
+            applySavedAccentColor();
+            observeDOMChanges();
+            
+            // Enter key for chat input
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput) {
+                chatInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') sendMessage();
+                });
+            }
+        });
+        
+        window.addNotification = addNotification;
+        window.markNotificationRead = markNotificationRead;
+        window.updateNotificationUI = updateNotificationUI;
+        window.clearAllNotifications = clearAllNotifications;
+        window.toggleChat = toggleChat;
+        window.sendMessage = sendMessage;
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - MealMate AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto; padding: 1rem;">
+    
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div>
+            <h1 style="margin: 0; font-size: 1.8rem; background: linear-gradient(135deg, #059669, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">👤 My Profile</h1>
+            <p style="margin: 0.25rem 0 0; color: var(--text-secondary, #6b7280);">Manage your account and health information</p>
+        </div>
+        <button onclick="toggleEditMode()" id="editModeBtn" style="background: #10b981; color: white; border: none; padding: 0.4rem 1rem; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 0.8rem;">
+            ✏️ Edit Profile
+        </button>
+    </div>
+
+    <!-- Main Profile Card -->
+    <div style="background: var(--card-bg, white); border-radius: 20px; overflow: hidden; border: 1px solid var(--border-color, #e5e7eb); margin-bottom: 1.5rem;">
+        
+        <!-- Cover Section -->
+        <div style="background: linear-gradient(135deg, #059669, #10b981); padding: 1rem; text-align: center; color: white;">
+            <div style="font-size: 3rem; margin-bottom: 0.25rem;">{{ user.name[0]|upper if user and user.name else '👤' }}</div>
+            <h2 style="margin: 0; font-size: 1.2rem;">{{ user.name if user and user.name else 'User' }}</h2>
+            <p style="margin: 0.25rem 0 0; opacity: 0.9; font-size: 0.8rem;">{{ user.email if user and user.email else 'No email' }}</p>
+        </div>
+        
+        <!-- Profile Content -->
+        <div style="padding: 1.5rem;">
+            
+            <!-- View Mode -->
+            <div id="viewMode">
+                <!-- ROW 1: 3 Cards -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 1.5rem;">
+                    
+                    <!-- Card 1: Personal Information -->
+                    <div style="background: var(--bg-primary, #f9fafb); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+                        <h3 style="margin: 0 0 0.75rem 0; color: #059669; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span>📋</span> Personal Information
+                        </h3>
+                        <div style="margin-bottom: 0.6rem;">
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Full Name</div>
+                            <div style="font-weight: 600; font-size: 0.85rem;">{{ user.name if user and user.name else 'Guest' }}</div>
+                        </div>
+                        <div style="margin-bottom: 0.6rem;">
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Email Address</div>
+                            <div style="font-weight: 600; font-size: 0.85rem;">{{ user.email if user and user.email else 'Not provided' }}</div>
+                        </div>
+                        <div style="margin-bottom: 0.6rem;">
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Phone Number</div>
+                            <div style="font-weight: 600; font-size: 0.85rem;">{{ user.phone if user and user.phone else 'Not provided' }}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Member Since</div>
+                            <div style="font-weight: 600; font-size: 0.85rem;">{{ user.created_at[:10] if user and user.created_at else 'Recently' }}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Card 2: Health Metrics -->
+                    <div style="background: var(--bg-primary, #f9fafb); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+                        <h3 style="margin: 0 0 0.75rem 0; color: #059669; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span>📊</span> Health Metrics
+                        </h3>
+                        <div style="margin-bottom: 0.6rem;">
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Age</div>
+                            <div style="font-weight: 600; font-size: 0.85rem;">{{ user.profile.age if user.profile and user.profile.age else 'Not set' }}</div>
+                        </div>
+                        <div style="margin-bottom: 0.6rem;">
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Gender</div>
+                            <div style="font-weight: 600; font-size: 0.85rem;">
+                                {% if user.profile and user.profile.gender == 'M' %}Male{% elif user.profile and user.profile.gender == 'F' %}Female{% else %}Not set{% endif %}
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 0.6rem;">
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Height / Weight</div>
+                            <div style="font-weight: 600; font-size: 0.85rem;">
+                                {{ user.profile.height_cm if user.profile and user.profile.height_cm else '?' }} cm / 
+                                {{ user.profile.weight_kg if user.profile and user.profile.weight_kg else '?' }} kg
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">BMI</div>
+                            <div style="font-weight: 600; font-size: 0.85rem;">
+                                {{ user.profile.bmi if user.profile and user.profile.bmi else '?' }} 
+                                ({{ user.profile.bmi_category if user.profile and user.profile.bmi_category else 'N/A' }})
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Card 3: Medical Information -->
+                    <div style="background: var(--bg-primary, #f9fafb); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+                        <h3 style="margin: 0 0 0.75rem 0; color: #ef4444; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span>🏥</span> Medical Information
+                        </h3>
+                        <div style="margin-bottom: 0.6rem;">
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Medical Conditions</div>
+                            <div style="font-weight: 600; font-size: 0.8rem;">
+                                {{ user.profile.diseases if user.profile and user.profile.diseases else 'None reported' }}
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 0.6rem;">
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Allergies</div>
+                            <div style="font-weight: 600; font-size: 0.8rem;">
+                                {{ user.profile.allergies if user.profile and user.profile.allergies else 'None' }}
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 0.6rem;">
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Medications</div>
+                            <div style="font-weight: 600; font-size: 0.8rem;">
+                                {{ user.profile.medications if user.profile and user.profile.medications else 'None' }}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Sleep Quality</div>
+                            <div style="font-weight: 600; font-size: 0.85rem;">
+                                {{ user.profile.sleep_quality if user.profile and user.profile.sleep_quality else 'Average' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ROW 2: 3 Cards -->
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+                    
+                    <!-- Card 4: Lifestyle & Diet -->
+                    <div style="background: var(--bg-primary, #f9fafb); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+                        <h3 style="margin: 0 0 0.75rem 0; color: #f59e0b; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span>🍽️</span> Lifestyle & Diet
+                        </h3>
+                        <div style="margin-bottom: 0.6rem;">
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Activity Level</div>
+                            <div style="font-weight: 600; font-size: 0.85rem;">
+                                {{ user.profile.activity_level if user.profile and user.profile.activity_level else 'Moderate' }}
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 0.6rem;">
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Diet Preference</div>
+                            <div style="font-weight: 600; font-size: 0.85rem;">
+                                {{ user.profile.diet_preference if user.profile and user.profile.diet_preference else 'Both' }}
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 0.6rem;">
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Meal Preference</div>
+                            <div style="font-weight: 600; font-size: 0.85rem;">
+                                {{ user.profile.meal_preference if user.profile and user.profile.meal_preference else '3 meals/day' }}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Cuisine Preference</div>
+                            <div style="font-weight: 600; font-size: 0.85rem;">
+                                {{ user.profile.cuisine_preference if user.profile and user.profile.cuisine_preference else 'Indian' }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Card 5: Nutrition Goals -->
+                    <div style="background: var(--bg-primary, #f9fafb); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+                        <h3 style="margin: 0 0 0.75rem 0; color: #8b5cf6; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span>🎯</span> Nutrition Goals
+                        </h3>
+                        <div style="margin-bottom: 0.6rem;">
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Daily Calories (TDEE)</div>
+                            <div style="font-weight: 600; font-size: 0.85rem;">
+                                {{ user.profile.tdee if user.profile and user.profile.tdee else '2000' }} kcal
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 0.6rem;">
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Plan Duration</div>
+                            <div style="font-weight: 600; font-size: 0.85rem;">
+                                {{ user.profile.plan_duration if user.profile and user.profile.plan_duration else '30' }} days
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Goal Advice</div>
+                            <div style="font-weight: 600; font-size: 0.8rem;">
+                                {{ user.profile.goal_advice if user.profile and user.profile.goal_advice else 'Maintain healthy lifestyle' }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Card 6: Available Ingredients -->
+                    <div style="background: var(--bg-primary, #f9fafb); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+                        <h3 style="margin: 0 0 0.75rem 0; color: #10b981; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <span>🥬</span> Available Ingredients
+                        </h3>
+                        <div style="margin-bottom: 0.6rem;">
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Ingredients at Home</div>
+                            <div style="font-weight: 600; font-size: 0.8rem; word-wrap: break-word;">
+                                {% if user.profile and user.profile.available_ingredients %}
+                                    {{ user.profile.available_ingredients }}
+                                {% else %}
+                                    Not specified
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 0.6rem;">
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Protein Sources</div>
+                            <div style="font-weight: 600; font-size: 0.8rem;">
+                                {{ user.profile.protein_sources if user.profile and user.profile.protein_sources else 'All sources' }}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.65rem; color: var(--text-secondary, #6b7280);">Preferred Fruits</div>
+                            <div style="font-weight: 600; font-size: 0.8rem;">
+                                {{ user.profile.preferred_fruits if user.profile and user.profile.preferred_fruits else 'All fruits' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Edit Mode (Hidden by default) -->
+            <div id="editMode" style="display: none;">
+                <form id="profileEditForm">
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+                        
+                        <!-- Edit Personal Info -->
+                        <div style="background: var(--bg-primary, #f9fafb); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+                            <h3 style="margin: 0 0 0.75rem 0; color: #059669;">📋 Personal Information</h3>
+                            <div class="form-group" style="margin-bottom: 0.75rem;">
+                                <label style="display: block; margin-bottom: 0.3rem; font-size: 0.7rem; font-weight: 600;">Full Name</label>
+                                <input type="text" id="editName" value="{{ user.name if user and user.name else '' }}" style="width: 100%; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color, #e5e7eb);">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0.75rem;">
+                                <label style="display: block; margin-bottom: 0.3rem; font-size: 0.7rem; font-weight: 600;">Phone Number</label>
+                                <input type="tel" id="editPhone" value="{{ user.phone if user and user.phone else '' }}" style="width: 100%; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color, #e5e7eb);">
+                            </div>
+                        </div>
+                        
+                        <!-- Edit Health Metrics -->
+                        <div style="background: var(--bg-primary, #f9fafb); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+                            <h3 style="margin: 0 0 0.75rem 0; color: #059669;">📊 Health Metrics</h3>
+                            <div class="form-group" style="margin-bottom: 0.75rem;">
+                                <label style="display: block; margin-bottom: 0.3rem; font-size: 0.7rem; font-weight: 600;">Age</label>
+                                <input type="number" id="editAge" value="{{ user.profile.age if user.profile and user.profile.age else '' }}" style="width: 100%; padding: 0.5rem; border-radius: 8px;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0.75rem;">
+                                <label style="display: block; margin-bottom: 0.3rem; font-size: 0.7rem; font-weight: 600;">Gender</label>
+                                <select id="editGender" style="width: 100%; padding: 0.5rem; border-radius: 8px;">
+                                    <option value="">Select</option>
+                                    <option value="M" {% if user.profile and user.profile.gender == 'M' %}selected{% endif %}>Male</option>
+                                    <option value="F" {% if user.profile and user.profile.gender == 'F' %}selected{% endif %}>Female</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0.75rem;">
+                                <label style="display: block; margin-bottom: 0.3rem; font-size: 0.7rem; font-weight: 600;">Height (cm)</label>
+                                <input type="number" step="0.1" id="editHeight" value="{{ user.profile.height_cm if user.profile and user.profile.height_cm else '' }}" style="width: 100%; padding: 0.5rem; border-radius: 8px;">
+                            </div>
+                            <div class="form-group">
+                                <label style="display: block; margin-bottom: 0.3rem; font-size: 0.7rem; font-weight: 600;">Weight (kg)</label>
+                                <input type="number" step="0.1" id="editWeight" value="{{ user.profile.weight_kg if user.profile and user.profile.weight_kg else '' }}" style="width: 100%; padding: 0.5rem; border-radius: 8px;">
+                            </div>
+                        </div>
+                        
+                        <!-- Edit Medical Info -->
+                        <div style="background: var(--bg-primary, #f9fafb); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+                            <h3 style="margin: 0 0 0.75rem 0; color: #ef4444;">🏥 Medical Information</h3>
+                            <div class="form-group" style="margin-bottom: 0.75rem;">
+                                <label style="display: block; margin-bottom: 0.3rem; font-size: 0.7rem; font-weight: 600;">Medical Conditions</label>
+                                <input type="text" id="editDiseases" value="{{ user.profile.diseases if user.profile and user.profile.diseases else '' }}" style="width: 100%; padding: 0.5rem; border-radius: 8px;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0.75rem;">
+                                <label style="display: block; margin-bottom: 0.3rem; font-size: 0.7rem; font-weight: 600;">Allergies</label>
+                                <input type="text" id="editAllergies" value="{{ user.profile.allergies if user.profile and user.profile.allergies else '' }}" style="width: 100%; padding: 0.5rem; border-radius: 8px;">
+                            </div>
+                            <div class="form-group">
+                                <label style="display: block; margin-bottom: 0.3rem; font-size: 0.7rem; font-weight: 600;">Medications</label>
+                                <input type="text" id="editMedications" value="{{ user.profile.medications if user.profile and user.profile.medications else '' }}" style="width: 100%; padding: 0.5rem; border-radius: 8px;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: flex-end;">
+                        <button type="button" onclick="cancelEdit()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 30px; cursor: pointer;">Cancel</button>
+                        <button type="button" onclick="saveProfile()" style="background: #10b981; color: white; border: none; padding: 0.5rem 1rem; border-radius: 30px; cursor: pointer;">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Change Password Section -->
+    <!--<div style="background: var(--card-bg, white); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+        <h3 style="margin: 0 0 0.5rem 0; color: #059669; font-size: 1rem;">🔐 Change Password</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 0.3rem; font-size: 0.7rem; font-weight: 600;">Current Password</label>
+                <input type="password" id="currentPassword" style="width: 100%; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color, #e5e7eb);">
+            </div>
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 0.3rem; font-size: 0.7rem; font-weight: 600;">New Password</label>
+                <input type="password" id="newPassword" style="width: 100%; padding: 0.5rem; border-radius: 8px; border: 1px solid var(--border-color, #e5e7eb);">
+            </div>
+        </div>
+        <div style="margin-top: 0.75rem; display: flex; justify-content: flex-end;">
+            <button onclick="changePassword()" style="background: #059669; color: white; border: none; padding: 0.4rem 1rem; border-radius: 30px; cursor: pointer; font-size: 0.8rem;">Update Password</button>
+        </div>
+    </div>-->
+    
+    <!-- Danger Zone -->
+    <!--<div style="margin-top: 1rem; padding: 0.5rem; background: #fee2e2; border-radius: 12px; text-align: center;">
+        <p style="margin: 0; font-size: 0.7rem; color: #dc2626;">⚠️ For security reasons, account deletion is not available in this demo.</p>
+    </div>-->
+</div>
+
+<style>
+    .form-group input, .form-group select {
+        transition: all 0.2s ease;
+        background: var(--input-bg, white);
+        color: var(--text-primary, #1f2937);
+    }
+    .form-group input:focus, .form-group select:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+    }
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    #viewMode, #editMode {
+        animation: slideIn 0.3s ease;
+    }
+</style>
+
+<script>
+    function toggleEditMode() {
+        const viewMode = document.getElementById('viewMode');
+        const editMode = document.getElementById('editMode');
+        const editBtn = document.getElementById('editModeBtn');
+        
+        if (viewMode.style.display !== 'none') {
+            viewMode.style.display = 'none';
+            editMode.style.display = 'block';
+            editBtn.innerHTML = '👁️ View Profile';
+        } else {
+            viewMode.style.display = 'block';
+            editMode.style.display = 'none';
+            editBtn.innerHTML = '✏️ Edit Profile';
+        }
+    }
+    
+    function cancelEdit() {
+        document.getElementById('viewMode').style.display = 'block';
+        document.getElementById('editMode').style.display = 'none';
+        document.getElementById('editModeBtn').innerHTML = '✏️ Edit Profile';
+    }
+    
+    async function saveProfile() {
+        const name = document.getElementById('editName').value;
+        const phone = document.getElementById('editPhone').value;
+        
+        try {
+            const response = await fetch('/api/update-profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name, phone: phone })
+            });
+            const data = await response.json();
+            if (data.success) {
+                showToast('Profile updated successfully!', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast(data.message || 'Update failed', 'error');
+            }
+        } catch (error) {
+            showToast('Network error', 'error');
+        }
+    }
+    
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: ${type === 'success' ? '#10b981' : '#ef4444'};
+            color: white;
+            padding: 8px 16px;
+            border-radius: 10px;
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+            font-size: 0.8rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        `;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+</script>
+{% endblock %}

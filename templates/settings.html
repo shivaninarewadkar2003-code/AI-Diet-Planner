@@ -1,0 +1,463 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - MealMate AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 0 auto; padding: 1.5rem;">
+    
+    <!-- Header -->
+    <div style="margin-bottom: 2rem;">
+        <h1 style="margin: 0; font-size: 1.8rem; background: linear-gradient(135deg, #059669, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">⚙️ Settings</h1>
+        <p style="margin: 0.25rem 0 0; color: #6b7280;">Manage your account preferences and app settings</p>
+    </div>
+
+    <!-- Change Password Section -->
+    <div style="background: var(--card-bg, white); border-radius: 20px; margin-bottom: 1rem; border: 1px solid var(--border-color, #e5e7eb); overflow: hidden;">
+        <div onclick="toggleSection('passwordSection')" style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 1.5rem; cursor: pointer; background: var(--card-bg, white); transition: background 0.2s;">
+            <div style="display: flex; align-items: center; gap: 0.8rem;">
+                <span style="font-size: 1.3rem;">🔒</span>
+                <div>
+                    <h3 style="margin: 0; font-size: 1.1rem;">Change Password</h3>
+                    <p style="margin: 0.2rem 0 0; font-size: 0.75rem; color: #6b7280;">Update your account password</p>
+                </div>
+            </div>
+            <span id="passwordSectionIcon" style="font-size: 1.2rem; transition: transform 0.3s;">▼</span>
+        </div>
+        <div id="passwordSectionContent" style="display: none; padding: 0 1.5rem 1.5rem 1.5rem; border-top: 1px solid var(--border-color, #e5e7eb);">
+            <div style="max-width: 400px; margin-top: 1.2rem;">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 500; margin-bottom: 0.4rem; color: var(--text-primary, #374151);">Current Password</label>
+                    <input type="password" id="currentPassword" placeholder="Enter current password" style="width: 100%; padding: 0.7rem 1rem; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 0.9rem; outline: none; transition: all 0.2s;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 500; margin-bottom: 0.4rem; color: var(--text-primary, #374151);">New Password</label>
+                    <input type="password" id="newPassword" placeholder="Enter new password (min 6 characters)" style="width: 100%; padding: 0.7rem 1rem; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 0.9rem; outline: none;">
+                </div>
+                <div style="margin-bottom: 1.2rem;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 500; margin-bottom: 0.4rem; color: var(--text-primary, #374151);">Confirm New Password</label>
+                    <input type="password" id="confirmPassword" placeholder="Confirm new password" style="width: 100%; padding: 0.7rem 1rem; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 0.9rem; outline: none;">
+                </div>
+                <button onclick="changePassword()" class="accent-button" style="border: none; padding: 0.7rem 1.5rem; border-radius: 40px; cursor: pointer; font-weight: 500; font-size: 0.85rem;">Update Password</button>
+                <div id="passwordMessage" style="margin-top: 0.8rem; font-size: 0.75rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Language Section -->
+    <div style="background: var(--card-bg, white); border-radius: 20px; margin-bottom: 1rem; border: 1px solid var(--border-color, #e5e7eb); overflow: hidden;">
+        <div onclick="toggleSection('languageSection')" style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 1.5rem; cursor: pointer; background: var(--card-bg, white); transition: background 0.2s;">
+            <div style="display: flex; align-items: center; gap: 0.8rem;">
+                <span style="font-size: 1.3rem;">🌐</span>
+                <div>
+                    <h3 style="margin: 0; font-size: 1.1rem;">Language</h3>
+                    <p style="margin: 0.2rem 0 0; font-size: 0.75rem; color: #6b7280;">Choose your preferred language</p>
+                </div>
+            </div>
+            <span id="languageSectionIcon" style="font-size: 1.2rem; transition: transform 0.3s;">▼</span>
+        </div>
+        <div id="languageSectionContent" style="display: none; padding: 0 1.5rem 1.5rem 1.5rem; border-top: 1px solid var(--border-color, #e5e7eb);">
+            <div style="margin-top: 1.2rem;">
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="radio" name="language" value="en" checked style="width: 18px; height: 18px;"> 🇬🇧 English
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="radio" name="language" value="hi" style="width: 18px; height: 18px;"> 🇮🇳 हिन्दी (Hindi)
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="radio" name="language" value="es" style="width: 18px; height: 18px;"> 🇪🇸 Español
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="radio" name="language" value="fr" style="width: 18px; height: 18px;"> 🇫🇷 Français
+                    </label>
+                </div>
+                <button onclick="saveLanguage()" class="accent-button" style="border: none; padding: 0.6rem 1.2rem; border-radius: 40px; cursor: pointer; font-size: 0.8rem;">Save Language Preference</button>
+                <div id="languageMessage" style="margin-top: 0.5rem; font-size: 0.75rem;"></div>
+                <p style="font-size: 0.7rem; color: #9ca3af; margin-top: 0.8rem;">⚠️ Language support coming soon. Currently only English is fully supported.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accent Color Selection - Aesthetic Light Colors -->
+    <div style="background: var(--card-bg, white); border-radius: 20px; margin-bottom: 1rem; border: 1px solid var(--border-color, #e5e7eb); overflow: hidden;">
+        <div onclick="toggleSection('colorSection')" style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 1.5rem; cursor: pointer; background: var(--card-bg, white); transition: background 0.2s;">
+            <div style="display: flex; align-items: center; gap: 0.8rem;">
+                <span style="font-size: 1.3rem;">🎨</span>
+                <div>
+                    <h3 style="margin: 0; font-size: 1.1rem;">Accent Color</h3>
+                    <p style="margin: 0.2rem 0 0; font-size: 0.75rem; color: #6b7280;">Choose your theme accent color</p>
+                </div>
+            </div>
+            <span id="colorSectionIcon" style="font-size: 1.2rem; transition: transform 0.3s;">▼</span>
+        </div>
+        <div id="colorSectionContent" style="display: none; padding: 0 1.5rem 1.5rem 1.5rem; border-top: 1px solid var(--border-color, #e5e7eb);">
+            <div style="margin-top: 1.2rem;">
+                <!-- Aesthetic Color Palette -->
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem;">
+                    <!-- Sage Green -->
+                    <div onclick="setAccentColor('#84b59f')" style="width: 50px; height: 50px; background: #84b59f; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" id="colorSage" title="Sage Green"></div>
+                    <!-- Soft Lavender -->
+                    <div onclick="setAccentColor('#b8a9e8')" style="width: 50px; height: 50px; background: #b8a9e8; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" id="colorLavender" title="Soft Lavender"></div>
+                    <!-- Dusty Rose -->
+                    <div onclick="setAccentColor('#e8b4b8')" style="width: 50px; height: 50px; background: #e8b4b8; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" id="colorRose" title="Dusty Rose"></div>
+                    <!-- Soft Peach -->
+                    <div onclick="setAccentColor('#f5c9a3')" style="width: 50px; height: 50px; background: #f5c9a3; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" id="colorPeach" title="Soft Peach"></div>
+                    <!-- Mint -->
+                    <div onclick="setAccentColor('#a8e6cf')" style="width: 50px; height: 50px; background: #a8e6cf; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" id="colorMint" title="Mint"></div>
+                    <!-- Powder Blue -->
+                    <div onclick="setAccentColor('#a3c4f3')" style="width: 50px; height: 50px; background: #a3c4f3; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" id="colorBlue" title="Powder Blue"></div>
+                </div>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                    <!-- Warm Coral -->
+                    <div onclick="setAccentColor('#f6aea7')" style="width: 50px; height: 50px; background: #f6aea7; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" id="colorCoral" title="Warm Coral"></div>
+                    <!-- Soft Yellow -->
+                    <div onclick="setAccentColor('#f5e6a3')" style="width: 50px; height: 50px; background: #f5e6a3; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" id="colorYellow" title="Soft Yellow"></div>
+                    <!-- Soft Teal -->
+                    <div onclick="setAccentColor('#b2d8d8')" style="width: 50px; height: 50px; background: #b2d8d8; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" id="colorTeal" title="Soft Teal"></div>
+                    <!-- Light Plum -->
+                    <div onclick="setAccentColor('#c9a9c9')" style="width: 50px; height: 50px; background: #c9a9c9; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" id="colorPlum" title="Light Plum"></div>
+                    <!-- Buttercup -->
+                    <div onclick="setAccentColor('#f5d5a0')" style="width: 50px; height: 50px; background: #f5d5a0; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" id="colorButter" title="Buttercup"></div>
+                    <!-- Classic Green -->
+                    <div onclick="setAccentColor('#88b04b')" style="width: 50px; height: 50px; background: #88b04b; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" id="colorGreen" title="Classic Green"></div>
+                </div>
+                <div id="colorMessage" style="margin-top: 1rem; font-size: 0.75rem;"></div>
+                <p style="font-size: 0.7rem; color: #9ca3af; margin-top: 0.8rem;">🎨 These soft, aesthetic colors will be applied to buttons and highlights throughout the app.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms & Conditions Section -->
+    <div style="background: var(--card-bg, white); border-radius: 20px; margin-bottom: 1rem; border: 1px solid var(--border-color, #e5e7eb); overflow: hidden;">
+        <div onclick="toggleSection('termsSection')" style="display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 1.5rem; cursor: pointer; background: var(--card-bg, white); transition: background 0.2s;">
+            <div style="display: flex; align-items: center; gap: 0.8rem;">
+                <span style="font-size: 1.3rem;">📋</span>
+                <div>
+                    <h3 style="margin: 0; font-size: 1.1rem;">Terms & Conditions</h3>
+                    <p style="margin: 0.2rem 0 0; font-size: 0.75rem; color: #6b7280;">Read our terms of service and privacy policy</p>
+                </div>
+            </div>
+            <span id="termsSectionIcon" style="font-size: 1.2rem; transition: transform 0.3s;">▼</span>
+        </div>
+        <div id="termsSectionContent" style="display: none; padding: 0 1.5rem 1.5rem 1.5rem; border-top: 1px solid var(--border-color, #e5e7eb);">
+            <div style="margin-top: 1.2rem; max-height: 400px; overflow-y: auto; padding-right: 0.5rem;">
+                <div style="margin-bottom: 1.5rem;">
+                    <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem;">1. Acceptance of Terms</h4>
+                    <p style="font-size: 0.8rem; color: #6b7280; line-height: 1.5;">By using MealMate AI, you agree to these terms and conditions. If you do not agree, please do not use our service.</p>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem;">2. Description of Service</h4>
+                    <p style="font-size: 0.8rem; color: #6b7280; line-height: 1.5;">MealMate AI provides personalized meal planning, fitness tracking, and health recommendations using AI technology. The information provided is for general informational purposes only.</p>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem;">3. Medical Disclaimer</h4>
+                    <p style="font-size: 0.8rem; color: #6b7280; line-height: 1.5;">The content on MealMate AI is not intended to be a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.</p>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem;">4. User Responsibilities</h4>
+                    <p style="font-size: 0.8rem; color: #6b7280; line-height: 1.5;">You are responsible for maintaining the confidentiality of your account and for all activities that occur under your account. You agree to provide accurate and complete information when using our service.</p>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem;">5. Privacy Policy</h4>
+                    <p style="font-size: 0.8rem; color: #6b7280; line-height: 1.5;">We take your privacy seriously. Your personal data is used solely to provide and improve our services. We do not sell your personal information to third parties.</p>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem;">6. Modifications to Service</h4>
+                    <p style="font-size: 0.8rem; color: #6b7280; line-height: 1.5;">We reserve the right to modify or discontinue, temporarily or permanently, the service with or without notice. We are not liable to you or any third party for any modification, suspension, or discontinuance of the service.</p>
+                </div>
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; text-align: center;">
+                    <p style="font-size: 0.7rem; color: #9ca3af;">Last updated: January 2025</p>
+                    <button onclick="acceptTerms()" class="accent-button" style="border: none; padding: 0.5rem 1.2rem; border-radius: 40px; cursor: pointer; font-size: 0.8rem; margin-top: 0.5rem;">I Accept the Terms</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danger Zone - Account Management -->
+    <div style="background: var(--card-bg, white); border-radius: 20px; margin-top: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+        <div style="padding: 1.2rem 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.8rem;">
+                <span style="font-size: 1.3rem;">⚠️</span>
+                <div>
+                    <h3 style="margin: 0; font-size: 1rem; color: var(--text-primary, #374151);">Account Management</h3>
+                    <p style="margin: 0.2rem 0 0; font-size: 0.75rem; color: #6b7280;">Delete your account and all associated data</p>
+                </div>
+            </div>
+            <div style="margin-top: 1rem;">
+                <button onclick="confirmDeleteAccount()" style="background: #6b7280; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 30px; cursor: pointer; font-size: 0.8rem; transition: background 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#6b7280'">Delete Account</button>
+                <p style="font-size: 0.65rem; color: #6b7280; margin-top: 0.5rem;">⚠️ This action cannot be undone. All your data will be permanently deleted.</p>
+            </div>
+            <div id="deleteAccountMessage" style="margin-top: 0.8rem; font-size: 0.75rem;"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Toggle collapsible sections
+    function toggleSection(sectionId) {
+        const content = document.getElementById(sectionId + 'Content');
+        const icon = document.getElementById(sectionId + 'Icon');
+        
+        if (content.style.display === 'none' || content.style.display === '') {
+            content.style.display = 'block';
+            icon.style.transform = 'rotate(180deg)';
+        } else {
+            content.style.display = 'none';
+            icon.style.transform = 'rotate(0deg)';
+        }
+    }
+    
+    // Change Password
+    async function changePassword() {
+        const currentPassword = document.getElementById('currentPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const messageDiv = document.getElementById('passwordMessage');
+        
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            messageDiv.innerHTML = '<span style="color: #ef4444;">❌ Please fill all fields</span>';
+            return;
+        }
+        
+        if (newPassword !== confirmPassword) {
+            messageDiv.innerHTML = '<span style="color: #ef4444;">❌ New passwords do not match</span>';
+            return;
+        }
+        
+        if (newPassword.length < 6) {
+            messageDiv.innerHTML = '<span style="color: #ef4444;">❌ Password must be at least 6 characters</span>';
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    current_password: currentPassword,
+                    new_password: newPassword
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                messageDiv.innerHTML = '<span style="color: #10b981;">✅ Password changed successfully!</span>';
+                document.getElementById('currentPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+            } else {
+                messageDiv.innerHTML = '<span style="color: #ef4444;">❌ ' + data.message + '</span>';
+            }
+        } catch (error) {
+            messageDiv.innerHTML = '<span style="color: #ef4444;">❌ Network error</span>';
+        }
+    }
+    
+    // Save Language Preference
+    function saveLanguage() {
+        const selected = document.querySelector('input[name="language"]:checked');
+        const messageDiv = document.getElementById('languageMessage');
+        
+        if (selected) {
+            localStorage.setItem('preferred_language', selected.value);
+            messageDiv.innerHTML = '<span style="color: #10b981;">✅ Language preference saved! Page will use ' + selected.value.toUpperCase() + ' on next reload.</span>';
+        }
+    }
+    
+    // Aesthetic Accent Color Selection - GLOBALLY SYNCED
+    function setAccentColor(color) {
+        // Remove highlight from all color circles
+        const colorIds = ['colorSage', 'colorLavender', 'colorRose', 'colorPeach', 'colorMint', 'colorBlue', 'colorCoral', 'colorYellow', 'colorTeal', 'colorPlum', 'colorButter', 'colorGreen'];
+        colorIds.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) element.style.border = '3px solid transparent';
+        });
+        
+        // Highlight selected
+        const colorMap = {
+            '#84b59f': 'colorSage',
+            '#b8a9e8': 'colorLavender',
+            '#e8b4b8': 'colorRose',
+            '#f5c9a3': 'colorPeach',
+            '#a8e6cf': 'colorMint',
+            '#a3c4f3': 'colorBlue',
+            '#f6aea7': 'colorCoral',
+            '#f5e6a3': 'colorYellow',
+            '#b2d8d8': 'colorTeal',
+            '#c9a9c9': 'colorPlum',
+            '#f5d5a0': 'colorButter',
+            '#88b04b': 'colorGreen'
+        };
+        
+        const selectedId = colorMap[color];
+        if (selectedId) {
+            const selectedCircle = document.getElementById(selectedId);
+            if (selectedCircle) selectedCircle.style.border = '3px solid #1f2937';
+        }
+        
+        // Save to localStorage
+        localStorage.setItem('accent_color', color);
+        
+        // Apply to CSS variables globally
+        document.documentElement.style.setProperty('--accent-color', color);
+        document.documentElement.style.setProperty('--accent-gradient', `linear-gradient(135deg, ${color}, ${color}CC)`);
+        
+        // Apply to ALL buttons on current page
+        const allButtons = document.querySelectorAll('button:not(.no-accent), .redeem-btn, .complete-btn, .accent-button, .btn-primary, .replace-btn, #regenerateBtn');
+        allButtons.forEach(btn => {
+            if (!btn.classList.contains('no-accent')) {
+                if (btn.classList.contains('replace-btn')) {
+                    btn.style.border = `1px solid ${color}`;
+                    btn.style.color = color;
+                    btn.style.background = 'transparent';
+                } else if (!btn.disabled) {
+                    btn.style.background = `linear-gradient(135deg, ${color}, ${color}CC)`;
+                }
+            }
+        });
+        
+        // Update chat elements
+        const chatButton = document.getElementById('chatButton');
+        if (chatButton) chatButton.style.background = `linear-gradient(135deg, ${color}, ${color}CC)`;
+        
+        const chatHeader = document.querySelector('#chatWindow > div:first-child');
+        if (chatHeader) chatHeader.style.background = `linear-gradient(135deg, ${color}, ${color}CC)`;
+        
+        const sendBtn = document.querySelector('#chatWindow button');
+        if (sendBtn) sendBtn.style.background = color;
+        
+        // Show success message
+        const messageDiv = document.getElementById('colorMessage');
+        if (messageDiv) {
+            messageDiv.innerHTML = '<span style="color: #10b981;">✅ Accent color updated globally! 🎨</span>';
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 3000);
+        }
+        
+        // Show toast confirmation
+        showToastMessage(`Accent color changed! 🎨`, 'success');
+    }
+    
+    function showToastMessage(msg, type) {
+        const toast = document.createElement('div');
+        toast.style.cssText = `position:fixed; bottom:80px; right:20px; background:${type === 'success' ? '#10b981' : '#ef4444'}; color:white; padding:10px 16px; border-radius:12px; z-index:10001; animation:slideIn 0.3s ease; font-size:0.8rem;`;
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+    
+    function loadSavedAccentColor() {
+        const savedColor = localStorage.getItem('accent_color');
+        if (savedColor) {
+            setAccentColor(savedColor);
+        }
+    }
+    
+    // Accept Terms
+    function acceptTerms() {
+        localStorage.setItem('terms_accepted', 'true');
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed; bottom:20px; right:20px; background:var(--accent-color); color:white; padding:10px 16px; border-radius:10px; z-index:10000; animation:slideIn 0.3s ease; font-size:0.8rem;';
+        toast.textContent = '✅ Thank you for accepting the Terms & Conditions!';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+    
+    // Delete Account - Fully Functional
+    async function confirmDeleteAccount() {
+        const messageDiv = document.getElementById('deleteAccountMessage');
+        
+        if (!confirm('⚠️ This will permanently delete your account and ALL data.\n\nThis action cannot be undone.\n\nAre you sure?')) {
+            return;
+        }
+        
+        const confirmation = prompt('Type "DELETE" to confirm account deletion:');
+        
+        if (confirmation !== 'DELETE') {
+            messageDiv.innerHTML = '<span style="color: #ef4444;">❌ Deletion cancelled. "DELETE" was not typed correctly.</span>';
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 3000);
+            return;
+        }
+        
+        if (!confirm('FINAL WARNING: This action is irreversible. All your meals, progress, and settings will be lost forever. Continue?')) {
+            messageDiv.innerHTML = '<span style="color: #f59e0b;">⚠️ Deletion cancelled.</span>';
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 2000);
+            return;
+        }
+        
+        messageDiv.innerHTML = '<span style="color: #f59e0b;">⏳ Deleting your account...</span>';
+        
+        try {
+            const response = await fetch('/api/delete-account', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                messageDiv.innerHTML = '<span style="color: #10b981;">✅ Account deleted successfully. Redirecting...</span>';
+                setTimeout(() => {
+                    window.location.href = '/logout';
+                }, 2000);
+            } else {
+                messageDiv.innerHTML = '<span style="color: #ef4444;">❌ ' + (data.message || 'Failed to delete account') + '</span>';
+            }
+        } catch (error) {
+            console.error('Delete account error:', error);
+            messageDiv.innerHTML = '<span style="color: #ef4444;">❌ Network error. Please try again.</span>';
+        }
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        loadSavedAccentColor();
+        
+        const sections = ['passwordSection', 'languageSection', 'colorSection', 'termsSection'];
+        sections.forEach(section => {
+            const content = document.getElementById(section + 'Content');
+            if (content) content.style.display = 'none';
+        });
+    });
+</script>
+
+<style>
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(100px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    
+    input:focus {
+        border-color: var(--accent-color);
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+    
+    button.accent-button {
+        background: var(--accent-gradient);
+        color: white;
+    }
+    
+    button.accent-button:hover {
+        filter: brightness(1.05);
+        transform: translateY(-1px);
+    }
+    
+    /* Color circle hover effect */
+    [id*="color"] {
+        transition: all 0.2s ease;
+    }
+    
+    [id*="color"]:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+</style>
+{% endblock %}

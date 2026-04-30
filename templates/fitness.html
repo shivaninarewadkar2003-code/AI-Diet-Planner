@@ -1,0 +1,526 @@
+{% extends "base.html" %}
+
+{% block title %}Fitness - MealMate AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto; padding: 1.5rem;">
+    
+    <!-- Welcome Banner -->
+    <div style="background: linear-gradient(135deg, #8b5cf6, #6366f1); border-radius: 24px; padding: 2rem 2rem; margin-bottom: 2rem; color: white;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1 style="margin: 0; font-size: 1.8rem;">💪 Your Personalized Fitness Plan</h1>
+                <p style="margin: 0.5rem 0 0; opacity: 0.9; font-size: 1rem;">
+                    🤖 Gemini AI creates custom workouts based on your health profile
+                </p>
+            </div>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <div style="background: rgba(255,255,255,0.2); border-radius: 30px; padding: 0.5rem 1rem;">
+                    <span style="font-size: 1rem;">📊</span>
+                    <strong style="font-size: 1rem;" id="totalMinutesLogged">0</strong> min this week
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Workout Log Card -->
+    <div id="logCard" style="background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 24px; padding: 1.5rem; margin-bottom: 2rem; color: white; display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div>
+                    <div style="font-size: 1.2rem; font-weight: bold;">📝 Log Today's Workout</div>
+                    <p style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.25rem;">Record your workout duration to earn points (1 point per 5 minutes)</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.8rem; align-items: center;">
+                <input type="number" id="workoutMinutes" placeholder="Minutes" min="1" max="300" step="5" 
+                       style="padding: 0.7rem 1rem; border: none; border-radius: 40px; font-size: 1rem; width: 130px; color: #1f2937; text-align: center;">
+                <button onclick="logWorkout()" style="background: white; color: #d97706; border: none; padding: 0.7rem 1.5rem; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 0.9rem;">
+                    📝 Log Workout
+                </button>
+            </div>
+        </div>
+        <div id="lastLogMessage" style="font-size: 0.8rem; margin-top: 0.8rem;"></div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" style="text-align: center; padding: 3rem;">
+        <div style="animation: pulse 1.5s infinite; font-size: 4rem; margin-bottom: 1rem;">🏋️‍♂️</div>
+        <h2 style="font-size: 1.5rem;">Generating your plan...</h2>
+        <p style="color: #6b7280; font-size: 1rem;">Gemini AI is analyzing your health profile</p>
+    </div>
+
+    <!-- AI Recommendation Card -->
+    <div id="aiRecommendationCard" style="display: none; background: linear-gradient(135deg, #059669, #10b981); border-radius: 24px; padding: 1.5rem; margin-bottom: 2rem; color: white;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div style="flex: 2;">
+                <div style="display: inline-block; background: rgba(255,255,255,0.2); border-radius: 30px; padding: 0.3rem 0.8rem; margin-bottom: 0.8rem;">
+                    <span style="font-size: 0.8rem;">🤖 GEMINI AI</span>
+                </div>
+                <div style="font-size: 1.5rem; font-weight: bold;" id="aiPrimaryCategory">--</div>
+                <div style="font-size: 0.95rem; opacity: 0.9; margin-top: 0.5rem; line-height: 1.5;" id="aiReason"></div>
+                <div style="margin-top: 0.8rem;">
+                    <span style="background: rgba(255,255,255,0.2); padding: 0.3rem 0.8rem; border-radius: 30px; font-size: 0.85rem;">⏱️ Recommended: <span id="aiDuration">--</span> minutes daily</span>
+                </div>
+            </div>
+            <div style="text-align: center; background: rgba(255,255,255,0.15); border-radius: 20px; padding: 0.8rem 1.2rem;">
+                <div style="font-size: 2rem;" id="categoryIcon">🏃</div>
+                <div style="font-size: 0.85rem; margin-top: 0.3rem;" id="categoryName">--</div>
+            </div>
+        </div>
+        <div id="aiWarnings" style="margin-top: 1rem; padding-top: 0.8rem; border-top: 1px solid rgba(255,255,255,0.2); font-size: 0.8rem; line-height: 1.4;">
+            <span>⚠️ Loading safety tips...</span>
+        </div>
+    </div>
+
+    <!-- AI Recommended Exercises -->
+    <div id="exercisesSection" style="display: none; margin-bottom: 2rem;">
+        <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.2rem;">
+            <span style="font-size: 1.8rem;">🤖</span>
+            <h2 style="margin: 0; font-size: 1.5rem;">AI-Recommended Exercises for You</h2>
+        </div>
+        <div id="aiExercisesContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+            <!-- Exercises will be inserted here -->
+        </div>
+    </div>
+
+    <!-- Weekly Schedule -->
+    <div id="weeklySection" style="display: none; background: var(--card-bg, white); border-radius: 24px; padding: 1.5rem; border: 1px solid var(--border-color, #e5e7eb); margin-bottom: 2rem;">
+        <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.2rem;">
+            <span style="font-size: 1.8rem;">📅</span>
+            <h2 style="margin: 0; font-size: 1.5rem;">Your Weekly Schedule</h2>
+        </div>
+        <div id="weeklySchedule" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.8rem;">
+            <!-- Filled by JavaScript -->
+        </div>
+        <div style="margin-top: 1.2rem; text-align: center; font-size: 0.85rem; color: #6b7280;">
+            💡 Click "Watch Tutorial" on any exercise for video guidance
+        </div>
+    </div>
+
+    <!-- Search Exercises Section -->
+    <div id="searchSection" style="display: none; background: var(--card-bg, white); border-radius: 24px; padding: 1.5rem; border: 1px solid var(--border-color, #e5e7eb);">
+        <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.2rem;">
+            <span style="font-size: 1.8rem;">🔍</span>
+            <h2 style="margin: 0; font-size: 1.5rem;">Search More Exercises</h2>
+        </div>
+        
+        <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 1.2rem;">
+            <input type="text" id="exerciseSearch" placeholder="Search any exercise (e.g., Push up, Squat, Yoga...)" 
+                   style="flex: 1; padding: 0.8rem 1rem; border: 1px solid #e5e7eb; border-radius: 40px; font-size: 1rem; outline: none;">
+            <button onclick="searchExercises()" style="background: #10b981; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 40px; cursor: pointer; font-size: 0.95rem;">🔍 Search</button>
+            <button onclick="clearSearch()" style="background: #6b7280; color: white; border: none; padding: 0.8rem 1.2rem; border-radius: 40px; cursor: pointer; font-size: 0.95rem;">✕ Clear</button>
+        </div>
+        
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1.2rem;">
+            <span style="font-size: 0.85rem; color: #6b7280;">Popular: </span>
+            <span class="suggestion-chip" onclick="searchQuick('push up')">🏋️ Push Up</span>
+            <span class="suggestion-chip" onclick="searchQuick('squat')">🦵 Squat</span>
+            <span class="suggestion-chip" onclick="searchQuick('plank')">🎯 Plank</span>
+            <span class="suggestion-chip" onclick="searchQuick('yoga')">🧘 Yoga</span>
+            <span class="suggestion-chip" onclick="searchQuick('walking')">🚶 Walking</span>
+            <span class="suggestion-chip" onclick="searchQuick('stretching')">🧘 Stretching</span>
+            <span class="suggestion-chip" onclick="searchQuick('lunges')">🦵 Lunges</span>
+        </div>
+        
+        <div id="searchResultsContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1rem;">
+            <div style="text-align: center; padding: 2rem; color: #6b7280; font-size: 1rem;">🔍 Search for any exercise above</div>
+        </div>
+    </div>
+
+    <!-- Motivational Footer -->
+    <div style="margin-top: 2rem; text-align: center; padding: 1.2rem; background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 20px;">
+        <span style="font-size: 1.3rem;">💪</span>
+        <span style="font-size: 0.95rem; color: #92400e; font-weight: 500;">"Small daily improvements are the key to lasting results. Keep going!"</span>
+        <span style="font-size: 1.3rem;">🔥</span>
+    </div>
+</div>
+
+<script>
+    let aiPlan = null;
+    let totalLoggedMinutes = 0;
+    
+    const exercisesDB = {
+        'full body': [
+            { name: 'Push Up', description: 'Classic upper body exercise building chest, shoulder, and tricep strength.', target: 'Chest, Shoulders, Triceps', equipment: 'None', difficulty: 'Intermediate' },
+            { name: 'Bodyweight Squat', description: 'Fundamental lower body exercise for leg strength and mobility.', target: 'Quads, Glutes, Hamstrings', equipment: 'None', difficulty: 'Beginner' },
+            { name: 'Plank', description: 'Core stability exercise that strengthens your entire midsection.', target: 'Abs, Back, Shoulders', equipment: 'None', difficulty: 'Beginner' }
+        ],
+        'cardio': [
+            { name: 'Jumping Jack', description: 'Full body cardio exercise to get your heart pumping.', target: 'Cardio, Full Body', equipment: 'None', difficulty: 'Beginner' },
+            { name: 'High Knee', description: 'Intense cardio that also works your leg muscles.', target: 'Cardio, Legs', equipment: 'None', difficulty: 'Intermediate' },
+            { name: 'Walking', description: 'Low-impact cardio perfect for heart health and consistency.', target: 'Heart Health, Legs', equipment: 'None', difficulty: 'Beginner' }
+        ],
+        'upper body': [
+            { name: 'Push Up', description: 'Upper body strength builder for chest, shoulders, and triceps.', target: 'Chest, Triceps', equipment: 'None', difficulty: 'Intermediate' },
+            { name: 'Triceps Dip', description: 'Targets the back of your arms using a chair.', target: 'Triceps', equipment: 'Chair', difficulty: 'Intermediate' },
+            { name: 'Arm Circle', description: 'Shoulder mobility and warm-up exercise.', target: 'Shoulders', equipment: 'None', difficulty: 'Beginner' }
+        ],
+        'lower body': [
+            { name: 'Squat', description: 'Leg strength exercise for quads, glutes, and hamstrings.', target: 'Quads, Glutes', equipment: 'None', difficulty: 'Beginner' },
+            { name: 'Lunge', description: 'Balance and leg strength exercise.', target: 'Quads, Hamstrings', equipment: 'None', difficulty: 'Beginner' },
+            { name: 'Glute Bridge', description: 'Glute activation and lower back exercise.', target: 'Glutes, Back', equipment: 'None', difficulty: 'Beginner' }
+        ],
+        'core': [
+            { name: 'Plank', description: 'Core stability for abs and back strength.', target: 'Abs, Back', equipment: 'None', difficulty: 'Beginner' },
+            { name: 'Bicycle Crunch', description: 'Oblique-focused core exercise.', target: 'Obliques', equipment: 'None', difficulty: 'Intermediate' },
+            { name: 'Leg Raise', description: 'Lower abdominal strength exercise.', target: 'Lower Abs', equipment: 'None', difficulty: 'Intermediate' }
+        ],
+        'yoga': [
+            { name: 'Downward Dog', description: 'Full body stretch strengthening arms and legs.', target: 'Flexibility, Strength', equipment: 'Mat', difficulty: 'Beginner' },
+            { name: 'Cat-Cow', description: 'Gentle spine mobility and warm-up.', target: 'Spine, Back', equipment: 'Mat', difficulty: 'Beginner' },
+            { name: "Child's Pose", description: 'Restorative pose for relaxation.', target: 'Relaxation, Back', equipment: 'Mat', difficulty: 'Beginner' }
+        ],
+        'stretching': [
+            { name: 'Hamstring Stretch', description: 'Stretches the back of your thighs.', target: 'Hamstrings', equipment: 'None', difficulty: 'Beginner' },
+            { name: 'Quad Stretch', description: 'Stretches the front of your thighs.', target: 'Quads', equipment: 'None', difficulty: 'Beginner' },
+            { name: 'Shoulder Stretch', description: 'Improves shoulder mobility.', target: 'Shoulders', equipment: 'None', difficulty: 'Beginner' }
+        ]
+    };
+    
+    let allExercises = [];
+    
+    function buildAllExercises() {
+        allExercises = [];
+        for (const category in exercisesDB) {
+            exercisesDB[category].forEach(ex => {
+                allExercises.push({ ...ex, originalCategory: category });
+            });
+        }
+    }
+    
+    async function loadAIFitnessPlan() {
+        try {
+            const response = await fetch('/api/personalized-fitness-plan');
+            const data = await response.json();
+            
+            if (data.success && data.plan) {
+                aiPlan = data.plan;
+                displayAIRecommendation(aiPlan);
+                displayAIExercises(aiPlan.exercises);
+                displayWeeklySchedule(aiPlan.weekly_schedule);
+                loadTotalLoggedMinutes();
+                loadTodayLog();
+                
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('logCard').style.display = 'block';
+                document.getElementById('aiRecommendationCard').style.display = 'block';
+                document.getElementById('exercisesSection').style.display = 'block';
+                document.getElementById('weeklySection').style.display = 'block';
+                document.getElementById('searchSection').style.display = 'block';
+            } else {
+                showError('Unable to load AI plan');
+            }
+        } catch (error) {
+            console.error('Error loading AI plan:', error);
+            showError('Failed to connect to AI service');
+        }
+    }
+    
+    async function loadTotalLoggedMinutes() {
+        try {
+            const response = await fetch('/api/get-fitness-logs');
+            const data = await response.json();
+            if (data.success) {
+                totalLoggedMinutes = data.total_minutes || 0;
+                document.getElementById('totalMinutesLogged').innerText = totalLoggedMinutes;
+            }
+        } catch (error) {
+            console.error('Error loading logs:', error);
+        }
+    }
+    
+    async function loadTodayLog() {
+        try {
+            const response = await fetch('/api/get-today-fitness-log');
+            const data = await response.json();
+            if (data.success && data.logged_minutes > 0) {
+                document.getElementById('lastLogMessage').innerHTML = `✅ You've already logged ${data.logged_minutes} minutes today! Come back tomorrow for more.`;
+                document.getElementById('workoutMinutes').disabled = true;
+                document.querySelector('#logCard button').disabled = true;
+                document.querySelector('#logCard button').style.opacity = '0.5';
+            } else {
+                document.getElementById('lastLogMessage').innerHTML = '';
+                document.getElementById('workoutMinutes').disabled = false;
+                document.querySelector('#logCard button').disabled = false;
+                document.querySelector('#logCard button').style.opacity = '1';
+            }
+        } catch (error) {
+            console.error('Error checking today log:', error);
+        }
+    }
+    
+    async function logWorkout() {
+        const minutes = document.getElementById('workoutMinutes').value;
+        
+        if (!minutes || minutes <= 0) {
+            showToast('Please enter a valid duration in minutes', 'error');
+            return;
+        }
+        
+        if (minutes > 300) {
+            showToast('Maximum 300 minutes (5 hours) per day', 'error');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/log-fitness-activity', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    minutes: parseInt(minutes),
+                    date: new Date().toISOString().split('T')[0]
+                })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                totalLoggedMinutes += parseInt(minutes);
+                document.getElementById('totalMinutesLogged').innerText = totalLoggedMinutes;
+                document.getElementById('workoutMinutes').value = '';
+                document.getElementById('lastLogMessage').innerHTML = `✅ Logged ${minutes} minutes! +${Math.floor(minutes/5)} points earned! 🎉`;
+                document.getElementById('workoutMinutes').disabled = true;
+                document.querySelector('#logCard button').disabled = true;
+                document.querySelector('#logCard button').style.opacity = '0.5';
+                showToast(`🎉 Logged ${minutes} minutes! +${Math.floor(minutes/5)} points!`, 'success');
+            } else {
+                showToast(data.message || 'Error saving workout log', 'error');
+            }
+        } catch (error) {
+            console.error('Error logging workout:', error);
+            showToast('Error saving workout log', 'error');
+        }
+    }
+    
+    function displayAIRecommendation(plan) {
+        document.getElementById('aiPrimaryCategory').innerHTML = `${getCategoryIcon(plan.primary_category)} ${plan.primary_category}`;
+        document.getElementById('aiReason').innerHTML = plan.recommendation_reason || 'Personalized based on your health profile';
+        document.getElementById('aiDuration').innerHTML = plan.daily_duration || '20-30';
+        document.getElementById('categoryIcon').innerHTML = getCategoryIcon(plan.primary_category);
+        document.getElementById('categoryName').innerHTML = plan.primary_category;
+        
+        if (plan.warnings && plan.warnings.length > 0) {
+            const warningsHtml = plan.warnings.map(w => `⚠️ ${w}`).join(' • ');
+            document.getElementById('aiWarnings').innerHTML = `<span>${warningsHtml}</span>`;
+        }
+    }
+    
+    function displayAIExercises(exercises) {
+        const container = document.getElementById('aiExercisesContainer');
+        if (!exercises || exercises.length === 0) {
+            container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #6b7280; font-size: 1rem;">No exercises recommended</div>';
+            return;
+        }
+        
+        container.innerHTML = '';
+        
+        exercises.forEach(ex => {
+            const card = createExerciseCard(ex.name, ex.duration, ex.difficulty, ex.precautions);
+            container.appendChild(card);
+        });
+    }
+    
+    function createExerciseCard(name, duration, difficulty, precautions) {
+        const card = document.createElement('div');
+        card.style.cssText = 'background: var(--card-bg, white); border-radius: 20px; overflow: hidden; border: 1px solid var(--border-color, #e5e7eb); transition: transform 0.2s;';
+        card.onmouseover = () => card.style.transform = 'translateY(-4px)';
+        card.onmouseout = () => card.style.transform = 'translateY(0)';
+        
+        let difficultyColor = '#10b981';
+        let difficultyBg = '#d1fae5';
+        if (difficulty === 'Intermediate') {
+            difficultyColor = '#d97706';
+            difficultyBg = '#fef3c7';
+        }
+        if (difficulty === 'Advanced') {
+            difficultyColor = '#dc2626';
+            difficultyBg = '#fee2e2';
+        }
+        
+        card.innerHTML = `
+            <div style="padding: 1.2rem;">
+                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; font-weight: 600;">${escapeHtml(name)}</h3>
+                <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                    <span style="background: #fef3c7; padding: 0.2rem 0.7rem; border-radius: 30px; font-size: 0.75rem; color: #92400e;">⏱️ ${escapeHtml(duration)}</span>
+                    <span style="background: ${difficultyBg}; color: ${difficultyColor}; padding: 0.2rem 0.7rem; border-radius: 30px; font-size: 0.75rem; font-weight: 500;">${difficulty}</span>
+                </div>
+                ${precautions ? `<p style="font-size: 0.75rem; color: #b91c1c; margin-top: 0.3rem; line-height: 1.4;">⚠️ ${escapeHtml(precautions)}</p>` : ''}
+                <div style="margin-top: 0.8rem;">
+                    <button onclick="searchYouTube('${escapeHtml(name)}')" 
+                            style="width: 100%; background: #3b82f6; color: white; border: none; padding: 0.6rem; border-radius: 40px; cursor: pointer; font-size: 0.8rem; font-weight: 500;">
+                        🔍 Watch YouTube Tutorial
+                    </button>
+                </div>
+            </div>
+        `;
+        return card;
+    }
+    
+    function displayWeeklySchedule(schedule) {
+        const container = document.getElementById('weeklySchedule');
+        const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const dayIcons = ['💪', '❤️', '😴', '🧘', '💪', '🏃', '😴'];
+        
+        container.innerHTML = '';
+        
+        days.forEach((day, i) => {
+            const workout = schedule[day] || 'Rest';
+            const isRest = workout === 'Rest';
+            const icon = dayIcons[i];
+            const cell = document.createElement('div');
+            cell.style.cssText = `text-align: center; padding: 0.8rem 0.2rem; background: ${isRest ? '#fef3c7' : '#10b981'}; border-radius: 16px; color: ${isRest ? '#92400e' : 'white'}; transition: transform 0.2s; cursor: pointer;`;
+            cell.onmouseover = () => cell.style.transform = 'scale(1.02)';
+            cell.onmouseout = () => cell.style.transform = 'scale(1)';
+            cell.innerHTML = `
+                <div style="font-size: 1.4rem;">${icon}</div>
+                <div style="font-weight: bold; font-size: 0.8rem; margin-top: 0.3rem;">${dayNames[i]}</div>
+                <div style="font-size: 0.7rem; margin-top: 0.2rem;">${workout}</div>
+            `;
+            container.appendChild(cell);
+        });
+    }
+    
+    function searchExercises() {
+        const searchTerm = document.getElementById('exerciseSearch').value.toLowerCase().trim();
+        if (!searchTerm) {
+            document.getElementById('searchResultsContainer').innerHTML = '<div style="text-align: center; padding: 2rem; color: #6b7280; font-size: 1rem;">🔍 Enter a search term above</div>';
+            return;
+        }
+        
+        const filtered = allExercises.filter(ex => 
+            ex.name.toLowerCase().includes(searchTerm) ||
+            ex.target.toLowerCase().includes(searchTerm) ||
+            ex.description.toLowerCase().includes(searchTerm)
+        );
+        
+        const container = document.getElementById('searchResultsContainer');
+        
+        if (filtered.length > 0) {
+            container.innerHTML = '';
+            filtered.forEach(ex => {
+                const card = createSearchCard(ex);
+                container.appendChild(card);
+            });
+        } else {
+            container.innerHTML = `<div style="text-align: center; padding: 2rem; color: #6b7280; font-size: 1rem;">No exercises found for "${escapeHtml(searchTerm)}"</div>`;
+        }
+    }
+    
+    function createSearchCard(ex) {
+        const card = document.createElement('div');
+        card.style.cssText = 'background: #f9fafb; border-radius: 16px; padding: 1rem; border: 1px solid #e5e7eb; transition: transform 0.2s;';
+        card.onmouseover = () => card.style.transform = 'translateY(-2px)';
+        card.onmouseout = () => card.style.transform = 'translateY(0)';
+        
+        card.innerHTML = `
+            <div style="flex: 1;">
+                <h4 style="margin: 0 0 0.2rem 0; font-size: 0.95rem; font-weight: 600;">${escapeHtml(ex.name)}</h4>
+                <p style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.3rem;">${escapeHtml(ex.description)}</p>
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                    <span style="background: #e5e7eb; padding: 0.15rem 0.5rem; border-radius: 20px; font-size: 0.65rem;">🎯 ${escapeHtml(ex.target)}</span>
+                    <span style="background: #dbeafe; padding: 0.15rem 0.5rem; border-radius: 20px; font-size: 0.65rem;">🛠️ ${escapeHtml(ex.equipment)}</span>
+                </div>
+                <button onclick="searchYouTube('${escapeHtml(ex.name)}')" 
+                        style="width: 100%; background: #3b82f6; color: white; border: none; padding: 0.4rem; border-radius: 30px; cursor: pointer; font-size: 0.7rem; font-weight: 500;">
+                    🔍 Watch Tutorial
+                </button>
+            </div>
+        `;
+        return card;
+    }
+    
+    function searchQuick(exerciseName) {
+        document.getElementById('exerciseSearch').value = exerciseName;
+        searchExercises();
+    }
+    
+    function clearSearch() {
+        document.getElementById('exerciseSearch').value = '';
+        document.getElementById('searchResultsContainer').innerHTML = '<div style="text-align: center; padding: 2rem; color: #6b7280; font-size: 1rem;">🔍 Search for any exercise above</div>';
+    }
+    
+    function searchYouTube(exerciseName) {
+        const searchQuery = encodeURIComponent(`${exerciseName} exercise tutorial how to do`);
+        window.open(`https://www.youtube.com/results?search_query=${searchQuery}`, '_blank');
+    }
+    
+    function getCategoryIcon(category) {
+        const icons = {
+            'Yoga': '🧘', 'Cardio': '❤️', 'Strength': '💪', 'HIIT': '⚡',
+            'Walking': '🚶', 'Chair Exercises': '🪑', 'Stretching': '🧘',
+            'Mixed Workouts': '🏃', 'Full Body': '🏃', 'Upper Body': '💪',
+            'Lower Body': '🦵', 'Core': '🎯'
+        };
+        for (const key in icons) {
+            if (category.toLowerCase().includes(key.toLowerCase())) return icons[key];
+        }
+        return '🏋️';
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.style.cssText = `position:fixed; bottom:20px; right:20px; background:${type === 'success' ? '#10b981' : '#ef4444'}; color:white; padding:14px 20px; border-radius:12px; z-index:10000; animation:slideIn 0.3s ease; font-size:0.9rem;`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+    
+    function showError(message) {
+        document.getElementById('loadingState').innerHTML = `
+            <div style="text-align: center; padding: 3rem; color: #dc2626;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                <h2 style="font-size: 1.3rem;">${message}</h2>
+                <p style="color: #6b7280; font-size: 0.9rem;">Please refresh the page or try again later.</p>
+                <button onclick="location.reload()" style="background: #10b981; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 30px; margin-top: 1rem; cursor: pointer; font-size: 0.9rem;">Refresh Page</button>
+            </div>
+        `;
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        buildAllExercises();
+        loadAIFitnessPlan();
+        
+        document.getElementById('exerciseSearch').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') searchExercises();
+        });
+    });
+</script>
+
+<style>
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(100px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.7; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .suggestion-chip {
+        background: #f3f4f6;
+        padding: 0.3rem 0.9rem;
+        border-radius: 40px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .suggestion-chip:hover {
+        background: #e5e7eb;
+        transform: scale(1.02);
+    }
+    input[type="number"]:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+</style>
+{% endblock %}

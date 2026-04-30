@@ -1,0 +1,880 @@
+{% extends "base.html" %}
+
+{% block title %}Recipes - MealMate AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto; padding: 1.5rem;">
+    
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <h1 style="margin: 0; font-size: 2rem; background: linear-gradient(135deg, #059669, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">📖 Recipe Library</h1>
+            <p style="margin: 0.25rem 0 0; color: var(--text-secondary, #6b7280);">Get personalized meal recommendations based on your health profile</p>
+        </div>
+    </div>
+
+    <!-- Today's AI Meal Recommendation -->
+    <div id="aiRecommendationSection" style="margin-bottom: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 style="margin: 0;">🤖 Today's AI Meal Plan</h2>
+            <button onclick="loadDailyRecommendation()" id="regenerateRecommendBtn" style="background: #10b981; color: white; border: none; padding: 0.4rem 1rem; border-radius: 30px; cursor: pointer; font-size: 0.7rem;">
+                🔄 Refresh
+            </button>
+        </div>
+        <div id="aiRecommendationCard">
+            <div style="text-align: center; padding: 2rem;">
+                <div class="spinner"></div>
+                <p style="margin-top: 1rem;">🤖 Loading your daily meal plan...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div style="margin-bottom: 2rem;">
+        <div style="background: var(--card-bg, white); border-radius: 50px; border: 2px solid var(--border-color, #e5e7eb); overflow: hidden; display: flex;">
+            <span style="padding: 0 1rem; font-size: 1.2rem; line-height: 3rem;">🔍</span>
+            <input type="text" id="searchInput" placeholder="Search by recipe name, ingredient, or medical condition (e.g., diabetes, hypertension)..." 
+                   style="flex: 1; padding: 0.8rem; border: none; outline: none; font-size: 1rem;">
+            <button onclick="searchRecipes()" style="background: #10b981; color: white; border: none; padding: 0 2rem; cursor: pointer; font-weight: bold;">Search</button>
+        </div>
+        
+        <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button onclick="searchQuick('diabetes')" class="quick-btn medical-btn" style="background: #fef3c7; border-color: #f59e0b; color: #92400e;">🩸 Diabetes</button>
+            <button onclick="searchQuick('hypertension')" class="quick-btn medical-btn" style="background: #fee2e2; border-color: #ef4444; color: #991b1b;">❤️ Hypertension</button>
+            <button onclick="searchQuick('obesity')" class="quick-btn medical-btn" style="background: #ffedd5; border-color: #f97316; color: #9a3412;">⚖️ Obesity / Weight Loss</button>
+            <button onclick="searchQuick('high cholesterol')" class="quick-btn medical-btn" style="background: #f3e8ff; border-color: #8b5cf6; color: #5b21b6;">🫀 High Cholesterol</button>
+            <button onclick="searchQuick('kidney disease')" class="quick-btn medical-btn" style="background: #cffafe; border-color: #06b6d4; color: #164e63;">🩺 Kidney Disease</button>
+            <button onclick="searchQuick('heart health')" class="quick-btn medical-btn" style="background: #dcfce7; border-color: #10b981; color: #065f46;">💚 Heart Health</button>
+            <button onclick="searchQuick('all')" class="quick-btn medical-btn" style="background: #f3f4f6; border-color: #6b7280; color: #374151;">🌟 All Recipes</button>
+        </div>
+    </div>
+
+    <!-- Search Results -->
+    <div id="searchResults" style="display: none;">
+        <h2>🔍 Search Results for "<span id="searchQuery"></span>"</h2>
+        <div id="resultsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;"></div>
+    </div>
+
+    <!-- Featured Recipes -->
+    <div id="featuredSection">
+        <h2>🌟 Featured Healthy Recipes</h2>
+        <div id="featuredGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;"></div>
+    </div>
+</div>
+
+<style>
+    .recipe-card {
+        background: var(--card-bg, white);
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid var(--border-color, #e5e7eb);
+        transition: transform 0.2s;
+        cursor: pointer;
+    }
+    .recipe-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .recipe-content {
+        padding: 1rem;
+    }
+    .recipe-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary, #1f2937);
+    }
+    .recipe-desc {
+        font-size: 0.8rem;
+        color: var(--text-secondary, #6b7280);
+        margin-bottom: 0.5rem;
+        line-height: 1.4;
+    }
+    .recipe-meta {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.7rem;
+        color: #059669;
+        margin-bottom: 0.75rem;
+    }
+    .view-recipe-btn {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 0.5rem;
+        border-radius: 30px;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+    .watch-youtube-btn {
+        background: #ef4444;
+        color: white;
+        border: none;
+        padding: 0.5rem;
+        border-radius: 30px;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 0.5rem;
+        font-weight: 500;
+    }
+    .watch-youtube-btn:hover {
+        background: #dc2626;
+    }
+    .view-recipe-btn:hover {
+        background: #059669;
+    }
+    .quick-btn {
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 0.7rem;
+    }
+    .quick-btn:hover {
+        background: #10b981;
+        color: white;
+    }
+    .medical-btn {
+        transition: all 0.2s ease;
+        font-weight: 500;
+    }
+    .medical-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+    .modal-content {
+        background: var(--card-bg, white);
+        border-radius: 24px;
+        max-width: 650px;
+        width: 90%;
+        max-height: 85%;
+        overflow-y: auto;
+        padding: 1.5rem;
+        color: var(--text-primary, #1f2937);
+    }
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #e5e7eb;
+        border-top-color: #10b981;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Daily Meal Card */
+    .daily-meal-card {
+        background: var(--card-bg, white);
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid var(--border-color, #e5e7eb);
+        transition: transform 0.2s;
+        cursor: pointer;
+    }
+    .daily-meal-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .daily-meal-content {
+        padding: 1rem;
+    }
+    .daily-meal-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary, #1f2937);
+    }
+    .daily-meal-desc {
+        font-size: 0.8rem;
+        color: var(--text-secondary, #6b7280);
+        margin-bottom: 0.5rem;
+        line-height: 1.4;
+    }
+    .daily-meal-meta {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.7rem;
+        color: #059669;
+        margin-bottom: 0.5rem;
+    }
+    .daily-view-btn {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 0.5rem;
+        border-radius: 30px;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+    .daily-view-btn:hover {
+        background: #059669;
+    }
+    .meal-time-badge {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 0.2rem 0.6rem;
+        border-radius: 20px;
+        font-size: 0.65rem;
+        display: inline-block;
+        margin-bottom: 0.5rem;
+    }
+    .progress-container {
+        background: #e5e7eb;
+        border-radius: 10px;
+        height: 8px;
+        margin-bottom: 1rem;
+        overflow: hidden;
+    }
+    .progress-fill {
+        background: #10b981;
+        border-radius: 10px;
+        height: 8px;
+        transition: width 0.3s;
+    }
+    .ai-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--border-color, #e5e7eb);
+    }
+    .ai-header h3 {
+        margin: 0;
+        color: var(--text-primary, #1f2937);
+    }
+    .ai-header p {
+        margin: 0.25rem 0 0;
+        font-size: 0.75rem;
+        color: var(--text-secondary, #6b7280);
+    }
+    
+    /* Grid for AI meals - 2 cards per row */
+    .ai-meals-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .ai-meals-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    /* Instructions list styling */
+    .instructions-list {
+        list-style-type: none;
+        padding-left: 0;
+        margin: 0;
+    }
+    .instructions-list li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border-color, #e5e7eb);
+        display: flex;
+        gap: 0.5rem;
+        color: var(--text-primary, #1f2937);
+    }
+    .ingredients-list {
+        margin: 0;
+        padding-left: 1rem;
+        color: var(--text-primary, #1f2937);
+    }
+    .ingredients-list li {
+        margin-bottom: 0.4rem;
+        color: var(--text-primary, #1f2937);
+    }
+    
+    /* Section backgrounds that work in dark mode */
+    .ingredients-section {
+        background: rgba(16, 185, 129, 0.1);
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        border-left: 4px solid #10b981;
+    }
+    .instructions-section {
+        background: rgba(245, 158, 11, 0.1);
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        border-left: 4px solid #f59e0b;
+    }
+    .why-good-section {
+        background: rgba(79, 70, 229, 0.1);
+        padding: 1rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        border-left: 4px solid #4f46e5;
+    }
+    .section-title {
+        margin-top: 0;
+        margin-bottom: 0.75rem;
+        font-weight: bold;
+    }
+    .youtube-video {
+        width: 100%;
+        height: 200px;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        border: none;
+    }
+</style>
+
+<script>
+    // ============================================================
+    // FEATURED RECIPES DATABASE (regular recipes - NO YouTube button)
+    // ============================================================
+    
+     const featuredRecipes = [
+        {
+            name: "Moong Dal Khichdi",
+            description: "Healthy one-pot comfort food made with rice and moong dal. Easy to digest, perfect for all health conditions.",
+            calories: 280,
+            time: "30 min",
+            difficulty: "Easy",
+            medical_conditions: ["diabetes", "hypertension", "kidney disease", "high cholesterol", "obesity", "all"],
+            youtubeUrl: "https://www.youtube.com/embed/P4i9jKiJZTk"
+        },
+        {
+            name: "Healthy Vegetable Soup",
+            description: "Hearty and nutritious vegetable soup made without cornflour or sauce. Perfect for weight loss.",
+            calories: 120,
+            time: "20 min",
+            difficulty: "Easy",
+            youtubeUrl: "https://www.youtube.com/embed/HgUKquM11Ok"
+        },
+        {
+            name: "Healthy Sprout Salad",
+            description: "A refreshing, no-cook salad packed with plant protein and crunchy veggies.",
+            calories: 180,
+            time: "15 min",
+            difficulty: "Easy",
+            medical_conditions: ["diabetes", "obesity", "high cholesterol", "all"],
+            youtubeUrl: "https://www.youtube.com/embed/euP77KYDDF0"
+        },
+        {
+            name: "Moong Dal Idli with Tomato Chutney",
+            description: "Healthy, steamed, protein-rich idlis made with moong dal. Zero cholesterol, low glycemic index.",
+            calories: 180,
+            time: "50 min",
+            difficulty: "Medium",
+            medical_conditions: ["diabetes", "high cholesterol", "obesity", "all"],
+           
+            youtubeUrl: "https://www.youtube.com/embed/lKGcsW-ElVY"
+        },
+        {
+        name: "Maharashtrian Amti Dal",
+        description: "Traditional Maharashtrian style toor dal with a perfect balance of sweet, sour, and spicy flavors. Made with kokum, jaggery, and goda masala.",
+        calories: 210,
+        time: "30 min",
+        difficulty: "Medium",
+        medical_conditions: ["diabetes", "high cholesterol", "all"],
+                youtubeUrl: "https://www.youtube.com/embed/BeDcoa7lXhk"
+},
+{
+    name: "Instant Ragi Dosa with Ginger Chutney",
+    description: "Healthy, no-fermentation dosa made with finger millet (ragi). High in calcium and fiber, perfect for diabetes and weight management.",
+    calories: 180,
+    time: "25 min",
+    difficulty: "Easy",
+    medical_conditions: ["diabetes", "high cholesterol", "obesity", "bone health", "all"],
+       youtubeUrl: "https://www.youtube.com/embed/jEOtna3oZLo"
+},
+{
+    name: "Ragi Malt (Weight Loss Friendly)",
+    description: "Highly nutritious savory ragi porridge made with sprouted ragi flour. Perfect for diabetes, weight loss, and heart health. Rich in calcium and iron.",
+    calories: 180,
+    time: "20 min",
+    difficulty: "Easy",
+    medical_conditions: ["diabetes", "obesity", "heart health"],
+        youtubeUrl: "https://www.youtube.com/embed/beWmi28Myyg"
+},
+{
+    name: "Karela Juice (Bitter Gourd Juice)",
+    description: "Powerful juice for managing blood sugar levels naturally. Rich in charantin and polypeptide-p which help lower blood glucose.",
+    calories: 35,
+    time: "10 min",
+    difficulty: "Easy",
+    medical_conditions: ["diabetes"],
+    ingredients: [
+        "Karela (Bitter Gourd) - 100 gms (1 medium)",
+        "Salt - A pinch (optional)",
+        "Lemon juice - 2 teaspoons",
+        "Water - 1/2 cup (optional, to adjust consistency)"
+    ],
+    instructions: "1. Wash karela thoroughly\n2. Cut into small pieces (remove seeds if you prefer less bitter taste)\n3. Add to blender with 1/2 cup water\n4. Blend until smooth\n5. Strain using a fine mesh strainer\n6. Add lemon juice and a pinch of salt\n7. Mix well\n8. Drink fresh immediately for best results\n\n💡 Tip: Drink on an empty stomach in the morning for best blood sugar control",
+    youtubeUrl: "https://www.youtube.com/embed/Qm1cK4z6HVs"
+},
+{
+    name: "Banana Stem Salad (Gabbe Ashi)",
+    description: "Traditional Konkani style banana stem salad. Rich in fiber, helps detoxify body, supports healthy digestion, and is cooling and refreshing.",
+    calories: 120,
+    time: "20 min",
+    difficulty: "Easy",
+    medical_conditions: ["hypertension", "kidney disease", "obesity"],
+       youtubeUrl: "https://www.youtube.com/embed/nsOBLabEN88"
+},
+{
+    name: "Cucumber Mint Raita",
+    description: "Cooling and creamy yogurt dip with crisp cucumber and fresh mint. Perfect side for spicy dishes or as a light dip. Helps balance body temperature and aids digestion.",
+    calories: 85,
+    time: "15 min",
+    difficulty: "Easy",
+    medical_conditions: ["hypertension", "heart health", "obesity"],
+        youtubeUrl: "https://www.youtube.com/embed/bLNMfiJqcWY"
+},
+{
+    name: "Oats Chilla (Savory Oats Pancake)",
+    description: "Healthy, gluten-free savory pancake made with rolled oats. High in fiber and beta-glucan which helps lower bad cholesterol.",
+    calories: 180,
+    time: "20 min",
+    difficulty: "Easy",
+    medical_conditions: ["high cholesterol", "heart health", "diabetes", "obesity"],
+        youtubeUrl: "https://www.youtube.com/embed/3-9mvrQOHI0"
+},
+{
+    name: "Cabbage Soup (Weight Loss Diet)",
+    description: "Low calorie, high fiber vegetable soup made primarily with cabbage. Perfect for weight loss diets and detox. Very filling yet extremely low in calories.",
+    calories: 65,
+    time: "25 min",
+    difficulty: "Easy",
+    medical_conditions: ["obesity", "heart health", "hypertension"],
+       youtubeUrl: "https://www.youtube.com/embed/GD0adU9YjWw"
+},
+{
+    name: "Flax Seeds Laddoo (Healthy Guilt-Free)",
+    description: "Nutritious, no-sugar laddoo made with flax seeds, peanuts, almonds, oats, and jaggery. Rich in Omega-3, fiber, and protein. Perfect for cholesterol management.",
+    calories: 120,
+    time: "30 min",
+    difficulty: "Medium",
+    medical_conditions: ["high cholesterol", "heart health", "diabetes", "obesity"],
+        youtubeUrl: "https://www.youtube.com/embed/R2PYLtfFcMc"
+},
+{
+    name: "Fermented Rice (Ganji Annam / Chaddannam)",
+    description: "Traditional South Indian fermented rice porridge. Natural probiotic that improves gut health, digestion, and immunity. Perfect for gut health and weight management.",
+    calories: 150,
+    time: "10 min + overnight fermentation",
+    difficulty: "Easy",
+    medical_conditions: ["obesity", "heart health", "diabetes"],
+        youtubeUrl: "https://www.youtube.com/embed/uzH_jsi2bvs"
+},
+{
+    name: "Walnut and Berry Smoothie",
+    description: "Creamy, antioxidant-rich smoothie made with walnuts and mixed berries. Rich in Omega-3 fatty acids, Vitamin C, and antioxidants. Perfect for heart and brain health.",
+    calories: 250,
+    time: "10 min",
+    difficulty: "Easy",
+    medical_conditions: ["heart health", "high cholesterol", "obesity", "diabetes"],
+        youtubeUrl: "https://www.youtube.com/embed/aGT5UKexjIM"
+},
+{
+    name: "Lentil Soup with Whole Wheat Roti",
+    description: "A heart-healthy, low-sodium lentil soup packed with fiber and potassium, served with a soft whole wheat roti. Perfect for managing blood pressure naturally.",
+    calories: 450,
+    time: "35 min",
+    difficulty: "Medium",
+    medical_conditions: ["hypertension", "diabetes", "high cholesterol", "obesity", "heart health", "all"],
+    youtubeUrl: "https://www.youtube.com/embed/mdT3tFEug00"
+},
+{
+    name: "Grilled Fish with Steamed Vegetables",
+    description: "Flaky, tender grilled fish seasoned with herbs and lemon, served with a colorful medley of steamed vegetables. A heart-healthy, low-sodium meal packed with omega-3 fatty acids.",
+    calories: 380,
+    prep_time: "10 min",
+    cook_time: "15 min",
+    difficulty: "Easy",
+    medical_conditions: ["hypertension", "diabetes", "high cholesterol", "obesity", "heart health", "anemia", "all"],
+    youtubeUrl: "https://www.youtube.com/embed/zxC1KjOki9I"
+},
+{
+    name: "Masala Oats Upma with Unsalted Peanuts and Yogurt",
+    description: "A savory, fiber-rich oatmeal upma tempered with Indian spices, topped with crunchy unsalted peanuts and served with probiotic-rich yogurt. A heart-healthy, low-sodium breakfast that keeps you full for hours.",
+    calories: 380,
+    prep_time: "10 min",
+    cook_time: "15 min",
+    difficulty: "Easy",
+    medical_conditions: ["hypertension", "diabetes", "high cholesterol", "obesity", "heart health", "all"],
+    youtubeUrl: "https://www.youtube.com/embed/8YGYp5Zq3Ew"
+},
+{
+    "name": "Besan Cheela with Mint Chutney (No Salt Added)",
+    "description": "Savory chickpea flour pancakes infused with ginger, turmeric, and finely chopped vegetables. Served with a refreshing, no-salt mint chutney. A protein-packed, gluten-free breakfast that supports heart health.",
+    "calories": 320,
+    "prep_time": "10 min",
+    "cook_time": "15 min",
+    "difficulty": "Easy",
+    "medical_conditions": ["hypertension", "diabetes", "high cholesterol", "obesity", "heart health", "all"],
+    "youtubeUrl": "https://www.youtube.com/embed/kFHJ0T-LKY0"
+}
+    ];
+
+    // ============================================================
+    // DAILY RECOMMENDATION (ALL MEALS FOR TODAY) - WITH YouTube buttons
+    // ============================================================
+    
+    async function loadDailyRecommendation() {
+        const container = document.getElementById('aiRecommendationCard');
+        
+        container.innerHTML = `
+            <div style="text-align: center; padding: 2rem;">
+                <div class="spinner"></div>
+                <p style="margin-top: 1rem;">🤖 Loading today's meal plan...</p>
+            </div>
+        `;
+        
+        try {
+            const response = await fetch('/api/get-daily-recommendation');
+            const data = await response.json();
+            
+            if (data.success && data.meals && data.meals.length > 0) {
+                displayAllMeals(data);
+            } else {
+                throw new Error(data.message || 'Failed to load');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            container.innerHTML = `
+                <div style="text-align: center; padding: 2rem; background: white; border-radius: 20px; border: 1px solid #e5e7eb;">
+                    <p>⚠️ Could not load today's meals</p>
+                    <p style="font-size: 0.8rem; margin-top: 0.5rem; color: #6b7280;">${error.message}</p>
+                    <button onclick="loadDailyRecommendation()" style="background: #10b981; color: white; border: none; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; margin-top: 1rem;">Try Again</button>
+                </div>
+            `;
+        }
+    }
+
+    function displayAllMeals(data) {
+        const container = document.getElementById('aiRecommendationCard');
+        const day = data.day;
+        const meals = data.meals;
+        const completedMeals = data.completed_meals || 0;
+        const totalMeals = data.total_meals || meals.length;
+        
+        const progressPercent = (completedMeals / totalMeals) * 100;
+        
+        let mealsHtml = '';
+        
+        for (const meal of meals) {
+            let shortDesc = meal.description;
+            if (shortDesc && shortDesc.length > 100) {
+                shortDesc = shortDesc.substring(0, 100) + '...';
+            }
+            
+            // Escape meal name for YouTube search
+            const youtubeSearchQuery = encodeURIComponent(`${meal.name} recipe how to cook`);
+            
+            mealsHtml += `
+                <div class="daily-meal-card" style="cursor: default;">
+                    <div class="daily-meal-content">
+                        <div style="margin-bottom: 0.5rem;">
+                            <span class="meal-time-badge">${meal.icon} ${meal.display_name} • ${meal.time}</span>
+                        </div>
+                        <div class="daily-meal-title">${escapeHtml(meal.name)}</div>
+                        <div class="daily-meal-desc">${escapeHtml(shortDesc || 'A healthy meal recommended for you')}</div>
+                        <div class="daily-meal-meta">
+                            <span>🔥 ${meal.calories} cal</span>
+                            <span>🥗 ${meal.display_name}</span>
+                        </div>
+                        <button class="daily-view-btn" onclick="showMealDetail(${JSON.stringify(meal).replace(/'/g, "\\'")}, ${day})">
+                            📖 View Recipe Details
+                        </button>
+                        <button class="watch-youtube-btn" onclick="searchYouTubeForRecipe('${escapeHtml(meal.name).replace(/'/g, "\\'")}')">
+                            🎬 Watch YouTube Tutorial
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        container.innerHTML = `
+            <div style="background: var(--card-bg, white); border-radius: 20px; padding: 1.5rem; border: 1px solid var(--border-color, #e5e7eb);">
+                <div class="ai-header">
+                    <div>
+                        <h3>📅 Day ${day} - Complete Meal Plan</h3>
+                        <p>${completedMeals}/${totalMeals} meals completed today</p>
+                    </div>
+                    <div style="background: #f3f4f6; border-radius: 12px; padding: 0.3rem 0.8rem;">
+                        <span style="font-size: 0.7rem; color: #6b7280;">✨ Click "Watch YouTube Tutorial" for video guides</span>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-fill" style="width: ${progressPercent}%;"></div>
+                </div>
+                
+                <div class="ai-meals-grid">
+                    ${mealsHtml}
+                </div>
+                
+                <div style="margin-top: 1rem; text-align: center; font-size: 0.7rem; color: var(--text-secondary, #6b7280);">
+                    💡 Tip: Watch video tutorials for step-by-step cooking guidance
+                </div>
+            </div>
+        `;
+    }
+    
+    // YouTube search function for AI-recommended recipes
+    function searchYouTubeForRecipe(recipeName) {
+        const searchQuery = encodeURIComponent(`${recipeName} recipe how to cook step by step`);
+        window.open(`https://www.youtube.com/results?search_query=${searchQuery}`, '_blank');
+    }
+
+    function generateInstructions(mealName, ingredients) {
+        return [
+            `Wash and prepare all ingredients for ${mealName}.`,
+            `Heat a pan/kadai on medium flame.`,
+            `Add required oil/ghee.`,
+            `Add spices and sauté for 30 seconds.`,
+            `Add the main ingredients and cook until done.`,
+            `Garnish with fresh coriander and serve hot.`
+        ];
+    }
+
+    async function showMealDetail(meal, day) {
+        const modal = document.getElementById('recipeModal');
+        const modalContent = document.getElementById('recipeModalContent');
+        
+        // SECTION 1: INGREDIENTS
+        let ingredientsHtml = '';
+        if (meal.ingredients && meal.ingredients.length > 0) {
+            ingredientsHtml = `
+                <div class="ingredients-section">
+                    <h3 class="section-title" style="color: #059669;">🌱 Ingredients</h3>
+                    <ul class="ingredients-list">
+                        ${meal.ingredients.map(ing => `<li>${typeof ing === 'string' ? ing : ing.name}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+        
+        // SECTION 2: INSTRUCTIONS
+        let instructionsList = generateInstructions(meal.name, meal.ingredients);
+        let instructionsHtml = `
+            <div class="instructions-section">
+                <h3 class="section-title" style="color: #d97706;">👨‍🍳 Instructions</h3>
+                <ul class="instructions-list">
+                    ${instructionsList.map((step, idx) => `<li><span style="font-weight: bold; min-width: 25px;">${idx + 1}.</span> <span>${escapeHtml(step)}</span></li>`).join('')}
+                </ul>
+            </div>
+        `;
+        
+        // SECTION 3: WHY THIS IS GOOD
+        let whyGoodHtml = `
+            <div class="why-good-section">
+                <h3 class="section-title" style="color: #4f46e5;">💚 Why This Meal is Good For You</h3>
+                <p style="margin: 0; line-height: 1.5; color: var(--text-primary, #1f2937);">This ${meal.display_name.toLowerCase()} is specially selected for Day ${day} of your personalized meal plan based on your health profile. Each ingredient is chosen for its specific health benefits to support your well-being.</p>
+            </div>
+        `;
+        
+        const youtubeSearchQuery = encodeURIComponent(`${meal.name} recipe how to cook`);
+        
+        modalContent.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="color: #059669; margin: 0;">${escapeHtml(meal.icon)} ${escapeHtml(meal.display_name)}</h2>
+                <button onclick="closeModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-primary, #1f2937);">&times;</button>
+            </div>
+            <div class="recipe-meta" style="justify-content: center; margin-bottom: 1rem;">
+                <span>🔥 ${meal.calories} cal</span>
+                <span>🥗 ${meal.display_name}</span>
+                <span>📅 Day ${day} at ${meal.time}</span>
+            </div>
+            <h3 style="margin: 0 0 0.5rem; color: var(--text-primary, #1f2937);">${escapeHtml(meal.name)}</h3>
+            <p style="line-height: 1.5; color: var(--text-secondary, #6b7280); margin-bottom: 1rem;">${escapeHtml(meal.description || 'A healthy meal recommended for you')}</p>
+            
+            ${ingredientsHtml}
+            ${instructionsHtml}
+            ${whyGoodHtml}
+            
+            <button onclick="searchYouTubeForRecipe('${escapeHtml(meal.name).replace(/'/g, "\\'")}')" style="width: 100%; background: #ef4444; color: white; border: none; padding: 0.75rem; border-radius: 40px; cursor: pointer; margin-top: 0.5rem;">
+                🎬 Watch YouTube Tutorial
+            </button>
+            <button onclick="searchRecipeFromRecommendation('${meal.name.replace(/'/g, "\\'")}')" style="width: 100%; background: #10b981; color: white; border: none; padding: 0.75rem; border-radius: 40px; cursor: pointer; margin-top: 0.5rem;">
+                🔍 Find Similar Recipes
+            </button>
+            <button onclick="closeModal()" style="width: 100%; background: #e5e7eb; color: #374151; border: none; padding: 0.75rem; border-radius: 40px; cursor: pointer; margin-top: 0.5rem;">Close</button>
+        `;
+        modal.style.display = 'flex';
+    }
+
+    function searchRecipeFromRecommendation(mealName) {
+        closeModal();
+        document.getElementById('searchInput').value = mealName;
+        searchRecipes();
+        document.getElementById('searchResults').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // ============================================================
+    // FEATURED RECIPE FUNCTIONS (NO YouTube button - only view recipe)
+    // ============================================================
+    
+    function getHealthRecommendation(recipe) {
+        let primaryCondition = (recipe.medical_conditions && recipe.medical_conditions.length > 0) 
+            ? recipe.medical_conditions.find(cond => cond !== 'all') || recipe.medical_conditions[0]
+            : 'general wellness';
+
+        const recommendations = {
+            diabetes: "✅ This recipe is excellent for managing diabetes. It has a low glycemic index, is rich in fiber to prevent blood sugar spikes.",
+            hypertension: "❤️ This dish is perfect for hypertension. It's naturally low in sodium and helps maintain healthy blood pressure.",
+            obesity: "⚖️ Ideal for your weight loss goals! Low in calories but high in volume and fiber, keeping you feeling full.",
+            high_cholesterol: "🫀 A heart-friendly choice! Low in saturated fat and packed with soluble fiber that helps lower bad cholesterol.",
+            kidney_disease: "🩺 A kidney-conscious recipe. Lower in potassium and phosphorus, making it safer for kidney health.",
+            heart_health: "💚 Amazing for your heart! Rich in antioxidants, healthy fats, and fiber to improve cardiovascular health.",
+            all: "🌟 A wonderfully balanced and healthy recipe that fits perfectly into a wellness-focused lifestyle."
+        };
+        
+        const conditionMap = {
+            "high cholesterol": "high_cholesterol",
+            "heart health": "heart_health",
+            "kidney disease": "kidney_disease"
+        };
+        
+        const key = conditionMap[primaryCondition] || primaryCondition;
+        return recommendations[key] || recommendations.all;
+    }
+
+    function searchQuick(query) {
+        document.getElementById('searchInput').value = query;
+        searchRecipes();
+    }
+
+    function searchRecipes() {
+        const query = document.getElementById('searchInput').value.toLowerCase().trim();
+        if (!query) return;
+        
+        const results = featuredRecipes.filter(recipe => {
+            if (recipe.name.toLowerCase().includes(query)) return true;
+            if (recipe.medical_conditions && recipe.medical_conditions.some(cond => cond.toLowerCase().includes(query))) return true;
+            return false;
+        });
+        
+        const resultsGrid = document.getElementById('resultsGrid');
+        const searchResultsDiv = document.getElementById('searchResults');
+        const featuredSection = document.getElementById('featuredSection');
+        
+        document.getElementById('searchQuery').innerText = query;
+        
+        if (results.length === 0) {
+            resultsGrid.innerHTML = `<div style="text-align: center; padding: 2rem;">❌ No recipes found for "${query}"<br><small>Try searching: diabetes, hypertension, obesity, cholesterol, or kidney</small></div>`;
+        } else {
+            resultsGrid.innerHTML = results.map(recipe => createFeaturedCard(recipe)).join('');
+        }
+        
+        searchResultsDiv.style.display = 'block';
+        featuredSection.style.display = 'none';
+    }
+
+    function createFeaturedCard(recipe) {
+        return `
+            <div class="recipe-card" onclick='displayRecipeModal(${JSON.stringify(recipe).replace(/'/g, "\\'")})'>
+                <div class="recipe-content">
+                    <div class="recipe-title">${escapeHtml(recipe.name)}</div>
+                    <div class="recipe-desc">${escapeHtml(recipe.description.substring(0, 80))}...</div>
+                    <div class="recipe-meta">
+                        <span>🔥 ${recipe.calories} cal</span>
+                        <span>🥗 ${recipe.time}</span>
+                        <span>📊 ${recipe.difficulty}</span>
+                    </div>
+                    <button class="view-recipe-btn" onclick="event.stopPropagation(); displayRecipeModal(${JSON.stringify(recipe).replace(/'/g, "\\'")})">
+                        📖 View Recipe Details
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    function displayRecipeModal(recipe) {
+        const modal = document.getElementById('recipeModal');
+        const modalContent = document.getElementById('recipeModalContent');
+        
+        const recommendationText = getHealthRecommendation(recipe);
+        
+        // YouTube video only - no ingredients, no instructions
+        let youtubeHtml = '';
+        if (recipe.youtubeUrl) {
+            youtubeHtml = `
+                <iframe class="youtube-video" src="${recipe.youtubeUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            `;
+        }
+        
+        // Why this is good section
+        let whyGoodHtml = `
+            <div class="why-good-section">
+                <h3 class="section-title" style="color: #4f46e5;">💚 Why This is Recommended For You</h3>
+                <p style="margin: 0; line-height: 1.5; color: var(--text-primary, #1f2937);">${recommendationText}</p>
+            </div>
+        `;
+        
+        modalContent.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="color: #059669; margin: 0;">${escapeHtml(recipe.name)}</h2>
+                <button onclick="closeModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-primary, #1f2937);">&times;</button>
+            </div>
+            <div class="recipe-meta" style="justify-content: center; margin-bottom: 1rem;">
+                <span>🔥 ${recipe.calories} cal</span>
+                <span>🥗 ${recipe.time}</span>
+                <span>📊 ${recipe.difficulty}</span>
+            </div>
+            <p style="line-height: 1.5; color: var(--text-secondary, #6b7280); margin-bottom: 1rem;">${escapeHtml(recipe.description)}</p>
+            
+            ${youtubeHtml}
+            ${whyGoodHtml}
+            
+            <button onclick="closeModal()" style="width: 100%; background: #10b981; color: white; border: none; padding: 0.75rem; border-radius: 40px; cursor: pointer; margin-top: 0.5rem;">Close</button>
+        `;
+        modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('recipeModal').style.display = 'none';
+    }
+
+    function loadFeaturedRecipes() {
+        const grid = document.getElementById('featuredGrid');
+        let cardsHtml = '';
+        for (const recipe of featuredRecipes) {
+            cardsHtml += createFeaturedCard(recipe);
+        }
+        grid.innerHTML = cardsHtml;
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Initialize everything
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') searchRecipes();
+    });
+
+    loadFeaturedRecipes();
+    loadDailyRecommendation();
+</script>
+
+<!-- Recipe Modal -->
+<div id="recipeModal" class="modal">
+    <div class="modal-content" id="recipeModalContent"></div>
+</div>
+{% endblock %}

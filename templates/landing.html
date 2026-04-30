@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MealMate AI - AI-Powered Meal Planning</title>
+    <style>
+        /* Light Mode (Default) */
+        :root {
+            --bg-primary: #f0fdf4;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --card-bg: #ffffff;
+            --border-color: #e5e7eb;
+            --navbar-bg: rgba(255,255,255,0.95);
+            --btn-outline: #059669;
+            --btn-primary: #059669;
+            --btn-primary-hover: #047857;
+            --feature-bg: white;
+            --step-circle-bg: #d1fae5;
+            --step-circle-color: #059669;
+            --footer-bg: #1a1a2e;
+            --footer-text: white;
+        }
+
+        /* Dark Mode */
+        body.dark-mode {
+            --bg-primary: #0a0f1c;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --card-bg: #1a1f2e;
+            --border-color: #2d3748;
+            --navbar-bg: rgba(10,15,28,0.95);
+            --btn-outline: #10b981;
+            --btn-primary: #10b981;
+            --btn-primary-hover: #059669;
+            --feature-bg: #1a1f2e;
+            --step-circle-bg: rgba(5,150,105,0.2);
+            --step-circle-color: #10b981;
+            --footer-bg: #0a0f1c;
+            --footer-text: #9ca3af;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        /* Navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: var(--navbar-bg);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-icon {
+            font-size: 1.75rem;
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            background: rgba(5,150,105,0.15);
+            border: 1px solid rgba(5,150,105,0.3);
+            border-radius: 50px;
+            padding: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            width: 40px;
+            height: 40px;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(5,150,105,0.25);
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(5,150,105,0.3);
+        }
+
+        .theme-icon {
+            font-size: 1.3rem;
+            transition: all 0.3s;
+        }
+
+        .btn-nav {
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-login {
+            border: 1px solid var(--btn-outline);
+            color: var(--btn-outline);
+            background: transparent;
+        }
+
+        .btn-login:hover {
+            background: var(--btn-outline);
+            color: white;
+        }
+
+        .btn-register {
+            background: var(--btn-primary);
+            color: white;
+        }
+
+        .btn-register:hover {
+            background: var(--btn-primary-hover);
+            transform: translateY(-2px);
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(5,150,105,0.1);
+            color: var(--btn-primary);
+            padding: 0.25rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .hero-highlight {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+            line-height: 1.6;
+        }
+
+        .btn-large {
+            display: inline-block;
+            padding: 0.875rem 2rem;
+            background: var(--btn-primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-large:hover {
+            background: var(--btn-primary-hover);
+            transform: translateY(-2px);
+        }
+
+        /* Features Section */
+        .features {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--feature-bg);
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-desc {
+            color: var(--text-secondary);
+            line-height: 1.5;
+            font-size: 0.875rem;
+        }
+
+        /* How It Works */
+        .how-it-works {
+            background: var(--feature-bg);
+            padding: 4rem 2rem;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 3rem;
+        }
+
+        .steps-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .step-card {
+            text-align: center;
+        }
+
+        .step-number {
+            width: 3rem;
+            height: 3rem;
+            background: var(--step-circle-bg);
+            color: var(--step-circle-color);
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0 auto 1rem;
+        }
+
+        .step-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .step-desc {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            background: var(--footer-bg);
+            color: var(--footer-text);
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            .features {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">
+            <span class="logo-icon">🥗</span>
+            <span class="logo-text">MealMate AI</span>
+        </div>
+        <div class="nav-right">
+            <!-- Theme Toggle Button -->
+            <div class="theme-toggle" onclick="toggleTheme()">
+                <span class="theme-icon" id="themeIcon">🌙</span>
+            </div>
+            <a href="/login" class="btn-nav btn-login">Login</a>
+            <a href="/register" class="btn-nav btn-register">Register</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <div class="hero-badge">✨ Powered by AI</div>
+        <h1>
+            AI Meal Recommendation <br>
+            <span class="hero-highlight">Using Multi-Phase Health Profiling</span>
+        </h1>
+        <p class="hero-subtitle">
+            Your personal AI nutrition coach – get a science‑backed 7‑day meal plan tailored to your BMI, TDEE, 
+            diet preferences, and health goals.
+        </p>
+        <a href="/register" class="btn-large">Start Health Assessment →</a>
+    </div>
+
+    <!-- Features Section -->
+    <div class="features">
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3 class="feature-title">BMI & TDEE Calculation</h3>
+            <p class="feature-desc">Mifflin‑St Jeor equation for precise daily calorie targets based on your body metrics.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <h3 class="feature-title">AI‑Powered Meal Plans</h3>
+            <p class="feature-desc">AI creates 7‑day plans with variety, calorie balance, and allergy‑aware filtering.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📈</div>
+            <h3 class="feature-title">Progress Tracking</h3>
+            <p class="feature-desc">Log weight daily and visualize your BMI trend with interactive charts.</p>
+        </div>
+    </div>
+
+    <!-- How It Works -->
+    <div class="how-it-works">
+        <h2 class="section-title">How It Works</h2>
+        <div class="steps-container">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3 class="step-title">Complete Assessment</h3>
+                <p class="step-desc">Fill in quick steps about your health & preferences</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3 class="step-title">AI Generates Plan</h3>
+                <p class="step-desc">AI crafts your personalized 7‑day meal plan</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3 class="step-title">Cook & Track</h3>
+                <p class="step-desc">Follow your plan and log progress on the dashboard</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>© 2024 MealMate AI. Your personal AI nutrition coach.</p>
+    </footer>
+
+    <script>
+        // Theme Toggle Functions - This saves to localStorage
+        window.toggleTheme = function() {
+            const body = document.body;
+            const themeIcon = document.getElementById('themeIcon');
+            const isDarkMode = body.classList.contains('dark-mode');
+            
+            if (isDarkMode) {
+                body.classList.remove('dark-mode');
+                localStorage.setItem('theme', 'light');
+                if (themeIcon) themeIcon.textContent = '🌙';
+            } else {
+                body.classList.add('dark-mode');
+                localStorage.setItem('theme', 'dark');
+                if (themeIcon) themeIcon.textContent = '☀️';
+            }
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const themeIcon = document.getElementById('themeIcon');
+            
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                if (themeIcon) themeIcon.textContent = '☀️';
+            } else {
+                document.body.classList.remove('dark-mode');
+                if (themeIcon) themeIcon.textContent = '🌙';
+            }
+        }
+
+        // Load theme on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTheme();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1098 @@
+{% extends "base.html" %}
+
+{% block title %}AI Meal Planner - MealMate AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto; padding: 1.5rem;">
+    
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h1 style="margin: 0; font-size: 2rem; background: linear-gradient(135deg, #059669, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">🍽️ AI Meal Planner</h1>
+            <p style="margin: 0.25rem 0 0; color: #6b7280;">Track your meals - Check off as you complete them!</p>
+        </div>
+        <div>
+            <button id="regenerateBtn" style="background: #10b981; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 40px; cursor: pointer; font-weight: 600;">🔄 Regenerate Meal Plan</button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        
+        <!-- Water Tracker -->
+        <div style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 24px; padding: 1.25rem; color: white;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0; font-size: 0.9rem;">Water Intake</h3>
+                    <p style="margin: 0; font-size: 0.65rem; opacity: 0.8;">Target: 2.5L/day</p>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 1.8rem; font-weight: bold;" id="waterLiters">0.0</div>
+                    <div style="font-size: 0.65rem;">liters</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: center; margin: 0.5rem 0;">
+                <div style="position: relative; width: 100px; height: 100px;">
+                    <svg width="100" height="100" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8"/>
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="white" stroke-width="8" 
+                                stroke-dasharray="264" stroke-dashoffset="264" stroke-linecap="round"
+                                id="waterCircle"/>
+                    </svg>
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                        <div style="font-size: 1.2rem; font-weight: bold;" id="waterPercent">0%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin: 0.75rem 0;">
+                <button onclick="addWater(0.25)" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.3rem 0.6rem; border-radius: 20px; cursor: pointer;">+250ml</button>
+                <button onclick="addWater(0.5)" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.3rem 0.6rem; border-radius: 20px; cursor: pointer;">+500ml</button>
+                <button onclick="addWater(1.0)" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.3rem 0.6rem; border-radius: 20px; cursor: pointer;">+1L</button>
+                <button onclick="resetWater()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.3rem 0.6rem; border-radius: 20px; cursor: pointer;">Reset</button>
+            </div>
+            
+            <div id="waterMessage" style="font-size: 0.7rem; text-align: center; opacity: 0.9;"></div>
+        </div>
+
+        <!-- Meal Completion -->
+        <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 24px; padding: 1.25rem; color: white;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0; font-size: 0.9rem;">Today's Meals</h3>
+                    <p style="margin: 0; font-size: 0.65rem; opacity: 0.8;">Day <span id="currentDayLabel">1</span> Progress</p>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 1.8rem; font-weight: bold;" id="completedCount">0</div>
+                    <div style="font-size: 0.65rem;" id="totalMealsCount">of 0 meals</div>
+                </div>
+            </div>
+            
+            <div style="background: rgba(255,255,255,0.3); border-radius: 20px; height: 8px; margin: 1rem 0;">
+                <div id="mealProgress" style="width: 0%; background: white; border-radius: 20px; height: 8px;"></div>
+            </div>
+            
+            <div id="mealMotivation" style="font-size: 0.7rem; text-align: center;">💪 Complete all meals to earn +50 bonus points!</div>
+        </div>
+
+        <!-- Calories -->
+        <div style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); border-radius: 24px; padding: 1.25rem; color: white;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0; font-size: 0.9rem;">Calories Today</h3>
+                    <p style="margin: 0; font-size: 0.65rem; opacity: 0.8;">Target: {{ user.profile.tdee if user.profile and user.profile.tdee else 2000 }} cal</p>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 1.8rem; font-weight: bold;" id="dailyCalories">0</div>
+                    <div style="font-size: 0.65rem;">consumed</div>
+                </div>
+            </div>
+            
+            <div style="background: rgba(255,255,255,0.3); border-radius: 20px; height: 8px; margin: 1rem 0;">
+                <div id="calorieProgress" style="width: 0%; background: white; border-radius: 20px; height: 8px;"></div>
+            </div>
+            
+            <div id="calorieStatus" style="font-size: 0.7rem; text-align: center;"></div>
+        </div>
+    </div>
+
+    <!-- STREAK TRACKER -->
+    <div style="background: var(--card-bg, white); border-radius: 24px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid var(--border-color, #e5e7eb);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <h3 style="margin: 0; font-size: 1rem; color: var(--text-primary, #374151);">📆 Your Progress Tracker</h3>
+            <span id="streakCount" style="background: #10b981; color: white; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: bold;">🔥 Streak: 0 days</span>
+        </div>
+        <div id="streakDaysContainer" style="display: flex; gap: 0.5rem; overflow-x: auto; padding: 0.25rem 0 0.5rem;"></div>
+        <div style="font-size: 0.65rem; color: var(--text-secondary, #9ca3af); margin-top: 0.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+            <span>✅ Faded = Completed</span>
+            <span>◐ Yellow = Partial</span>
+            <span>📅 Normal = Not started</span>
+            <span>🔒 Locked = Time expired</span>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" style="text-align: center; padding: 3rem; display: none;">
+        <div class="spinner"></div>
+        <p>🤖 AI is generating your personalized meal plan...</p>
+    </div>
+
+    <!-- Meal Plan Content -->
+    <div id="mealPlanContent"></div>
+</div>
+
+<!-- Reason Modal -->
+<div id="reasonModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div style="background: var(--card-bg, white); border-radius: 24px; max-width: 400px; width: 90%; padding: 1.5rem;">
+        <h3 style="margin: 0 0 1rem 0; color: var(--text-primary, #1f2937);">Why do you want to replace this meal?</h3>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
+            <button onclick="selectReason('dont_like')" class="reason-btn">😕 I don't like the taste</button>
+            <button onclick="selectReason('expensive')" class="reason-btn">💰 Ingredients are too expensive</button>
+            <button onclick="selectReason('allergy')" class="reason-btn">🚫 I have food allergies</button>
+            <button onclick="selectReason('unavailable')" class="reason-btn">🏪 Ingredients not available near me</button>
+            <button onclick="selectReason('too_spicy')" class="reason-btn">🌶️ Too spicy / too bland</button>
+            <button onclick="selectReason('time_consuming')" class="reason-btn">⏰ Takes too long to cook</button>
+        </div>
+        <button onclick="closeReasonModal()" style="width: 100%; background: #e5e7eb; color: #374151; border: none; padding: 0.75rem; border-radius: 40px; cursor: pointer;">Cancel</button>
+    </div>
+</div>
+
+<!-- Replace Meal Modal -->
+<div id="replaceModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div style="background: var(--card-bg, white); border-radius: 24px; max-width: 500px; width: 90%; max-height: 80%; overflow-y: auto; padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 style="margin: 0; color: var(--text-primary, #1f2937);">🔄 Replace Meal</h2>
+            <button onclick="closeReplaceModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-primary, #1f2937);">&times;</button>
+        </div>
+        <div id="replaceLoading" style="text-align: center; padding: 2rem;">
+            <div class="spinner" style="width: 30px; height: 30px;"></div>
+            <p>🤖 AI is finding a better alternative for you...</p>
+        </div>
+        <div id="replaceContent" style="display: none;">
+            <div style="margin-bottom: 1rem;">
+                <h3 id="replaceMealName" style="color: #059669;"></h3>
+                <p id="replaceMealDesc" style="font-size: 0.8rem; color: #6b7280;"></p>
+                <p id="replaceMealCal" style="font-weight: bold; color: #059669;"></p>
+            </div>
+            <div style="background: #f0fdf4; border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+                <strong>💡 Why this is better for you:</strong>
+                <p id="replaceReason" style="margin: 0.25rem 0 0; font-size: 0.75rem;"></p>
+            </div>
+            <div id="replaceIngredients" style="margin-bottom: 1rem;">
+                <h4>🌱 Key Ingredients & Benefits:</h4>
+                <div id="ingredientsList"></div>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button onclick="confirmReplace()" style="flex: 1; background: #10b981; color: white; border: none; padding: 0.75rem; border-radius: 40px; cursor: pointer; font-weight: 600;">✅ Replace Meal</button>
+                <button onclick="closeReplaceModal()" style="flex: 1; background: #e5e7eb; color: #374151; border: none; padding: 0.75rem; border-radius: 40px; cursor: pointer;">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #e5e7eb;
+        border-top-color: #10b981;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    .meal-card {
+        background: var(--card-bg, white);
+        border-radius: 16px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color, #e5e7eb);
+        transition: all 0.3s ease;
+    }
+    
+    .meal-card.completed {
+        background: #f0fdf4;
+        opacity: 0.75;
+        border-left: 4px solid #10b981;
+    }
+    
+    .meal-card.completed .meal-name,
+    .meal-card.completed .meal-desc {
+        text-decoration: line-through;
+        color: #6b7280;
+    }
+    
+    .meal-card.locked {
+        background: #fee2e2;
+        opacity: 0.7;
+    }
+    
+    .meal-name {
+        font-weight: bold;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary, #1f2937);
+    }
+    
+    .meal-desc {
+        font-size: 0.8rem;
+        color: var(--text-secondary, #6b7280);
+        margin-bottom: 0.5rem;
+        line-height: 1.4;
+    }
+    
+    .meal-calories {
+        color: #059669;
+        font-weight: bold;
+    }
+    
+    .complete-btn {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        cursor: pointer;
+        font-size: 0.7rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .complete-btn:hover:not(:disabled) { 
+        background: #059669; 
+        transform: scale(1.02);
+    }
+    
+    .complete-btn:disabled { 
+        opacity: 0.6; 
+        cursor: not-allowed; 
+        background: #9ca3af; 
+        transform: none;
+    }
+    
+    .complete-btn.loading {
+        background: #f59e0b;
+        cursor: wait;
+    }
+    
+    .replace-btn {
+        background: none;
+        border: 1px solid #8b5cf6;
+        color: #8b5cf6;
+        padding: 0.3rem 0.8rem;
+        border-radius: 30px;
+        cursor: pointer;
+        font-size: 0.7rem;
+        transition: all 0.2s;
+    }
+    
+    .replace-btn:hover {
+        background: #f3e8ff;
+        transform: scale(1.02);
+    }
+    
+    .reason-btn {
+        padding: 0.75rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: var(--card-bg, white);
+        cursor: pointer;
+        text-align: left;
+        width: 100%;
+        transition: all 0.2s;
+        color: var(--text-primary, #1f2937);
+    }
+    
+    .reason-btn:hover {
+        background: #f0fdf4;
+        border-color: #10b981;
+    }
+    
+    .daily-summary {
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        background: #f9fafb;
+        border-radius: 12px;
+    }
+    
+    .meal-badge {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 20px;
+        font-size: 0.65rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .ingredients-panel {
+        margin-top: 0.75rem;
+        padding: 0.75rem;
+        background: #f0fdf4;
+        border-radius: 12px;
+        border-left: 4px solid #10b981;
+        display: none;
+    }
+    
+    .ingredients-panel.show {
+        display: block;
+    }
+    
+    .view-benefits-btn {
+        background: none;
+        border: none;
+        color: #10b981;
+        cursor: pointer;
+        font-size: 0.7rem;
+        padding: 0.3rem 0.5rem;
+        border-radius: 20px;
+    }
+    
+    .view-benefits-btn:hover {
+        background: #ecfdf5;
+    }
+    
+    .streak-day-chip {
+        min-width: 75px;
+        background: #f3f4f6;
+        border-radius: 30px;
+        padding: 0.45rem 0;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        flex-shrink: 0;
+    }
+    
+    .streak-day-chip:hover {
+        transform: scale(1.02);
+        background: #e5e7eb;
+    }
+    
+    .streak-day-chip.completed {
+        background: #d1fae5;
+        opacity: 0.65;
+    }
+    
+    .streak-day-chip.partial {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+    }
+    
+    .streak-day-chip.partial .streak-day-number {
+        text-decoration: none !important;
+        color: #d97706;
+    }
+    
+    .streak-day-chip.locked {
+        background: #fee2e2;
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    .streak-day-chip.locked .streak-day-number {
+        color: #dc2626;
+    }
+    
+    .streak-day-number {
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .streak-day-date {
+        font-size: 0.55rem;
+        opacity: 0.7;
+        margin-top: 2px;
+        color: var(--text-secondary, #6b7280);
+    }
+    
+    @media (max-width: 768px) {
+        .streak-day-chip {
+            min-width: 65px;
+        }
+        .streak-day-date {
+            font-size: 0.5rem;
+        }
+    }
+    
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(100px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    
+    .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 12px;
+        color: white;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .toast.success { background: #10b981; }
+    .toast.error { background: #ef4444; }
+    .toast.info { background: #3b82f6; }
+    .toast.warning { background: #f59e0b; }
+</style>
+
+<script>
+    // Initialize variables
+    window.userTdee = {{ user.profile.tdee if user.profile and user.profile.tdee else 2000 }};
+    window.userId = {{ user.id if user else 0 }};
+    window.mealPreference = "{{ user.meal_preference if user.meal_preference else '3_meals' }}";
+    window.planDuration = {{ user.plan_duration if user.plan_duration else 30 }};
+
+    // ========== CLEAN MEAL NAME FUNCTION ==========
+    function cleanMealName(name) {
+        if (!name) return '';
+        return name.toLowerCase()
+            .replace(/[^\w\s]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .substring(0, 60);
+    }
+    
+    const startDateStr = "{{ user.profile.meal_plan_start_date if user.profile and user.profile.meal_plan_start_date else '' }}";
+    if (startDateStr) {
+        window.startDate = new Date(startDateStr);
+        window.startDate.setHours(0, 0, 0, 0);
+    } else {
+        window.startDate = new Date();
+        window.startDate.setHours(0, 0, 0, 0);
+    }
+    
+    window.mealConfig = {
+        '2_meals': { meals: ['brunch', 'dinner'], names: ['BRUNCH', 'DINNER'], icons: ['🍽️', '🌙'], times: ['10:30 AM', '7:00 PM'] },
+        '3_meals': { meals: ['breakfast', 'lunch', 'dinner'], names: ['BREAKFAST', 'LUNCH', 'DINNER'], icons: ['☀️', '🌤️', '🌙'], times: ['8:00 AM', '1:00 PM', '7:00 PM'] },
+        '4_meals': { meals: ['breakfast', 'lunch', 'snack', 'dinner'], names: ['BREAKFAST', 'LUNCH', 'SNACK', 'DINNER'], icons: ['☀️', '🌤️', '🍎', '🌙'], times: ['8:00 AM', '1:00 PM', '4:00 PM', '7:00 PM'] },
+        '5_meals': { meals: ['breakfast', 'morning_snack', 'lunch', 'afternoon_snack', 'dinner'], names: ['BREAKFAST', 'MORNING SNACK', 'LUNCH', 'AFTERNOON SNACK', 'DINNER'], icons: ['☀️', '🍌', '🌤️', '🍎', '🌙'], times: ['8:00 AM', '10:30 AM', '1:00 PM', '4:00 PM', '7:00 PM'] }
+    };
+    
+    window.currentConfig = window.mealConfig[window.mealPreference] || window.mealConfig['3_meals'];
+    window.currentConfig.badgeColors = ['#fef3c7', '#dcfce7', '#fce7f3', '#e0e7ff'];
+    window.currentConfig.badgeTextColors = ['#d97706', '#059669', '#db2777', '#4f46e5'];
+    
+    window.waterLiters = parseFloat(localStorage.getItem(`waterLiters_${window.userId}`) || '0');
+    window.lastWaterDate = localStorage.getItem(`lastWaterDate_${window.userId}`) || '';
+    window.completedMealsCache = {};
+    window.mealPlanData = null;
+    window.currentDay = 1;
+    window.replacePendingData = { day: null, mealType: null, mealName: null, calories: null, reason: null };
+    
+    function escapeHtml(t) { if (!t) return ''; const div = document.createElement('div'); div.textContent = t; return div.innerHTML; }
+    
+    function showToast(msg, type) {
+        const toast = document.createElement('div');
+        toast.style.cssText = `position:fixed; bottom:20px; right:20px; background:${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'}; color:white; padding:12px 20px; border-radius:12px; z-index:10000; animation:slideIn 0.3s ease;`;
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+    
+    function updateWaterDisplay() {
+        const today = new Date().toDateString();
+        if (window.lastWaterDate !== today) { 
+            window.waterLiters = 0; 
+            localStorage.setItem(`waterLiters_${window.userId}`, window.waterLiters); 
+            localStorage.setItem(`lastWaterDate_${window.userId}`, today); 
+        }
+        const waterElem = document.getElementById('waterLiters');
+        if (waterElem) waterElem.innerText = window.waterLiters.toFixed(1);
+        const percentage = (window.waterLiters / 2.5) * 100;
+        const circle = document.getElementById('waterCircle');
+        if (circle) {
+            const circumference = 264;
+            const offset = circumference - (percentage / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+        }
+        const percentElem = document.getElementById('waterPercent');
+        if (percentElem) percentElem.innerText = Math.round(percentage) + '%';
+        const msgElem = document.getElementById('waterMessage');
+        if (msgElem) msgElem.innerHTML = window.waterLiters >= 2.5 ? '✅ Excellent!' : '💧 Aim for 2.5L daily';
+    }
+    
+    window.addWater = function(amount) { 
+        const oldValue = window.waterLiters;
+        const newValue = Math.min(window.waterLiters + amount, 3);
+        window.waterLiters = newValue;
+        localStorage.setItem(`waterLiters_${window.userId}`, window.waterLiters);
+        updateWaterDisplay();
+        
+        const todayDate = new Date().toISOString().split('T')[0];
+        
+        fetch('/api/track-water', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: amount, date: todayDate })
+        }).catch(err => console.log('Water save error:', err));
+        
+        if (oldValue < 2.5 && newValue >= 2.5) {
+            showToast('🎉 +20 points for reaching your water goal!', 'success');
+            fetch('/api/update-progress', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ points: 20, reason: 'Reached daily water goal (+20 points)' })
+            }).catch(err => console.log('Points error:', err));
+        }
+    };
+    
+    window.resetWater = function() { 
+        window.waterLiters = 0; 
+        localStorage.setItem(`waterLiters_${window.userId}`, window.waterLiters); 
+        updateWaterDisplay(); 
+    };
+    
+    function parseTimeToMinutes(timeStr) {
+        let hour = parseInt(timeStr.split(':')[0]);
+        const minute = parseInt(timeStr.split(':')[1].split(' ')[0]);
+        const ampm = timeStr.split(' ')[1];
+        if (ampm === 'PM' && hour !== 12) hour += 12;
+        if (ampm === 'AM' && hour === 12) hour = 0;
+        return hour * 60 + minute;
+    }
+    
+    // ========== FIXED: getCurrentDayNumber ==========
+    function getCurrentDayNumber() {
+        if (!window.startDate || isNaN(window.startDate.getTime())) {
+            console.log("No start date, defaulting to day 1");
+            return 1;
+        }
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const timeDiff = today - window.startDate;
+        const daysSinceStart = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        let currentDayNum = daysSinceStart + 1;
+        
+        if (currentDayNum < 1) currentDayNum = 1;
+        if (currentDayNum > window.planDuration) currentDayNum = window.planDuration;
+        
+        console.log(`📅 Start: ${window.startDate.toDateString()}, Today: ${today.toDateString()}, Days since: ${daysSinceStart}, Current Day: ${currentDayNum}`);
+        return currentDayNum;
+    }
+    
+    // ========== FIXED: isMealLocked ==========
+    function isMealLocked(mealType, mealTime, isCompleted, isPastDay, isFutureDay) {
+        // Completed meals are NEVER locked
+        if (isCompleted) return false;
+        
+        // Future days should NOT be locked (they are not started yet)
+        if (isFutureDay) return false;
+        
+        // Past days - all meals locked
+        if (isPastDay) return true;
+        
+        // For CURRENT day, check if meal time window has passed + 1.5 hours
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        const mealMinutes = parseTimeToMinutes(mealTime);
+        const lockMinutes = mealMinutes + 90;  // 1.5 hours after meal time
+        
+        return currentMinutes > lockMinutes;
+    }
+    
+    // ========== FIXED: getDayStatus ==========
+    function getDayStatus(dayNum) {
+        if (!window.mealPlanData) return 'future';
+        const dayPlan = window.mealPlanData[`day${dayNum}`];
+        if (!dayPlan) return 'future';
+        
+        const currentDayNumber = getCurrentDayNumber();
+        
+        // Future day (not reached yet)
+        if (dayNum > currentDayNumber) {
+            return 'future';
+        }
+        
+        // Past day (already passed)
+        if (dayNum < currentDayNumber) {
+            return 'locked';
+        }
+        
+        // Current day - check completion status
+        let totalMeals = 0, completedCount = 0;
+        for (let i = 0; i < window.currentConfig.meals.length; i++) {
+            const mealType = window.currentConfig.meals[i];
+            const meal = dayPlan[mealType];
+            if (meal && meal.name) {
+                totalMeals++;
+                const cleanName = cleanMealName(meal.name);
+                if (window.completedMealsCache[cleanName] && window.completedMealsCache[cleanName].completed) completedCount++;
+            }
+        }
+        
+        const isFullyCompleted = totalMeals > 0 && completedCount === totalMeals;
+        const hasAnyCompleted = completedCount > 0;
+        
+        if (isFullyCompleted) return 'completed';
+        if (hasAnyCompleted) return 'partial';
+        return 'future';
+    }
+    
+    // ========== RENDER STREAK TRACKER WITH DATES ==========
+    function renderStreakTracker() {
+        const container = document.getElementById('streakDaysContainer');
+        if (!container) return;
+        const totalDays = window.planDuration || 30;
+        container.innerHTML = '';
+        
+        // Calculate streak counter
+        let streakCounter = 0;
+        for (let day = 1; day <= totalDays; day++) {
+            if (getDayStatus(day) === 'completed') {
+                streakCounter++;
+            } else {
+                break;
+            }
+        }
+        const streakElem = document.getElementById('streakCount');
+        if (streakElem) streakElem.innerHTML = `🔥 Streak: ${streakCounter} day${streakCounter !== 1 ? 's' : ''}`;
+        
+        // Get the base start date
+        const baseDate = new Date(window.startDate);
+        baseDate.setHours(0, 0, 0, 0);
+        
+        for (let day = 1; day <= totalDays; day++) {
+            // Calculate the actual date for this day
+            const currentDate = new Date(baseDate);
+            currentDate.setDate(baseDate.getDate() + (day - 1));
+            
+            // Format date as DD/MM/YYYY
+            const dayNum = currentDate.getDate().toString().padStart(2, '0');
+            const monthNum = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+            const yearNum = currentDate.getFullYear();
+            const dateStr = `${dayNum}/${monthNum}/${yearNum}`;
+            
+            const status = getDayStatus(day);
+            let chipClass = 'streak-day-chip', statusSymbol = '', titleText = '';
+            switch(status) {
+                case 'completed': chipClass += ' completed'; statusSymbol = '✓'; titleText = `All meals completed - ${dateStr}`; break;
+                case 'partial': chipClass += ' partial'; statusSymbol = '◐'; titleText = `Some meals completed - ${dateStr}`; break;
+                case 'locked': chipClass += ' locked'; statusSymbol = '🔒'; titleText = `Time expired - ${dateStr}`; break;
+                default: statusSymbol = '○'; titleText = `Not started yet - ${dateStr}`;
+            }
+            
+            const dayChip = document.createElement('div');
+            dayChip.className = chipClass;
+            dayChip.title = titleText;
+            dayChip.innerHTML = `
+                <div class="streak-day-number">${statusSymbol ? statusSymbol + ' ' : ''}Day ${day}</div>
+                <div class="streak-day-date">${dateStr}</div>
+            `;
+            dayChip.onclick = (function(d) { return function() {
+                if (status !== 'locked' && d <= totalDays && window.mealPlanData && window.mealPlanData[`day${d}`]) {
+                    window.currentDay = d;
+                    renderCurrentDay();
+                    updateMealStats();
+                    document.getElementById('mealPlanContent').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            };})(day);
+            container.appendChild(dayChip);
+        }
+    }
+    
+    function updateMealStats() {
+        let completed = 0, totalCalories = 0, totalMeals = 0;
+        const dayPlan = window.mealPlanData ? window.mealPlanData[`day${window.currentDay}`] : null;
+        if (dayPlan) {
+            for (let i = 0; i < window.currentConfig.meals.length; i++) {
+                const mealType = window.currentConfig.meals[i];
+                const meal = dayPlan[mealType];
+                if (meal && meal.name) {
+                    totalMeals++;
+                    const cleanName = cleanMealName(meal.name);
+                    if (window.completedMealsCache[cleanName] && window.completedMealsCache[cleanName].completed) {
+                        completed++;
+                        totalCalories += meal.calories || 0;
+                    }
+                }
+            }
+        }
+        const completedElem = document.getElementById('completedCount');
+        if (completedElem) completedElem.innerText = completed;
+        const totalElem = document.getElementById('totalMealsCount');
+        if (totalElem) totalElem.innerHTML = `of ${totalMeals} meals`;
+        const progressElem = document.getElementById('mealProgress');
+        if (progressElem) progressElem.style.width = totalMeals > 0 ? (completed / totalMeals * 100) + '%' : '0%';
+        const dailyCalElem = document.getElementById('dailyCalories');
+        if (dailyCalElem) dailyCalElem.innerText = totalCalories;
+        const calorieProgressElem = document.getElementById('calorieProgress');
+        if (calorieProgressElem) calorieProgressElem.style.width = Math.min((totalCalories / window.userTdee) * 100, 100) + '%';
+        const remaining = window.userTdee - totalCalories;
+        const statusElem = document.getElementById('calorieStatus');
+        if (statusElem) statusElem.innerHTML = remaining > 0 ? `📉 ${remaining} calories remaining` : (remaining < 0 ? `⚠️ Exceeded by ${Math.abs(remaining)} cal` : `🎯 Perfect!`);
+        const dayLabelElem = document.getElementById('currentDayLabel');
+        if (dayLabelElem) dayLabelElem.innerText = window.currentDay;
+        renderStreakTracker();
+    }
+    
+    // Load completed meals from database
+    async function loadCompletedMeals() {
+        try {
+            const response = await fetch('/api/get-completed-meals');
+            const data = await response.json();
+            
+            if (data.success && data.completed_meals) {
+                window.completedMealsCache = {};
+                data.completed_meals.forEach(meal => {
+                    const cleanName = cleanMealName(meal.name);
+                    window.completedMealsCache[cleanName] = {
+                        completed: true,
+                        name: meal.name,
+                        calories: meal.calories,
+                        date: meal.date,
+                        id: meal.id
+                    };
+                });
+                console.log(`✅ Loaded ${data.completed_meals.length} completed meals`);
+                return data.completed_meals;
+            }
+        } catch (error) {
+            console.error('Error loading completed meals:', error);
+        }
+        return [];
+    }
+    
+    // Mark meal as completed
+    async function markMealComplete(mealName, calories, btnElement) {
+        const cleanName = cleanMealName(mealName);
+        
+        if (window.completedMealsCache[cleanName] && window.completedMealsCache[cleanName].completed) {
+            showToast('✅ Meal already completed!', 'success');
+            return false;
+        }
+        
+        const btn = btnElement;
+        const originalText = btn.innerText;
+        
+        if (btn) {
+            btn.innerText = '⏳ Saving...';
+            btn.disabled = true;
+        }
+        
+        const todayDate = new Date().toISOString().split('T')[0];
+        
+        try {
+            const response = await fetch('/api/mark-meal-complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    meal_name: mealName, 
+                    calories: calories, 
+                    date: todayDate
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                window.completedMealsCache[cleanName] = {
+                    completed: true,
+                    name: mealName,
+                    calories: calories,
+                    date: todayDate,
+                    id: data.meal_id
+                };
+                
+                if (btn) {
+                    btn.innerText = '✓ Completed';
+                    btn.disabled = true;
+                }
+                
+                const mealCard = btn ? btn.closest('.meal-card') : null;
+                if (mealCard) mealCard.classList.add('completed');
+                
+                updateMealStats();
+                renderStreakTracker();
+                
+                showToast(`✅ +10 points for ${mealName}!`, 'success');
+                return true;
+            } else {
+                if (data.already_tracked) {
+                    showToast('⚠️ This meal was already completed today!', 'warning');
+                    if (btn) {
+                        btn.innerText = '✓ Completed';
+                        btn.disabled = true;
+                    }
+                } else {
+                    showToast('Error: ' + (data.message || 'Failed to track meal'), 'error');
+                }
+                return false;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast(error.message || 'Error saving meal completion', 'error');
+            if (btn) {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+            return false;
+        }
+    }
+    
+    // ========== FIXED: renderCurrentDay ==========
+    function renderCurrentDay() {
+        if (!window.mealPlanData) {
+            console.log("Waiting for meal plan data...");
+            return;
+        }
+        if (window.currentDay > window.planDuration) {
+            document.getElementById('mealPlanContent').innerHTML = `<div style="text-align: center; padding: 3rem;"><h3>🎉 Congratulations!</h3><p>You completed your ${window.planDuration}-day plan!</p><button onclick="regeneratePlan()" style="background:#10b981;color:white;border:none;padding:0.5rem 1rem;border-radius:30px;cursor:pointer;">Start New Plan</button></div>`;
+            return;
+        }
+        
+        const day = window.mealPlanData[`day${window.currentDay}`];
+        if (!day) {
+            document.getElementById('mealPlanContent').innerHTML = `<div style="text-align: center; padding: 3rem;"><p>Meal plan for Day ${window.currentDay} not available.</p><button onclick="regeneratePlan()" style="background:#10b981;color:white;border:none;padding:0.5rem 1rem;border-radius:30px;cursor:pointer;">Regenerate Plan</button></div>`;
+            return;
+        }
+        
+        const currentDayNumber = getCurrentDayNumber();
+        const isPastDay = window.currentDay < currentDayNumber;
+        const isFutureDay = window.currentDay > currentDayNumber;
+        
+        let html = `<div style="background: var(--card-bg, white); border-radius: 20px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+            <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; padding: 1rem 1.5rem;">
+                <div><strong>📅 Day ${window.currentDay}</strong></div>
+                ${isPastDay ? `<div style="font-size: 0.7rem; margin-top: 0.25rem; opacity: 0.8;">🔒 Past day - Meals are locked</div>` : ''}
+                ${isFutureDay ? `<div style="font-size: 0.7rem; margin-top: 0.25rem; opacity: 0.8;">⏳ Future day - Meals will unlock on this date</div>` : ''}
+                ${!isPastDay && !isFutureDay ? `<div style="font-size: 0.7rem; margin-top: 0.25rem; opacity: 0.8;">⏳ Meals can be completed any time</div>` : ''}
+            </div>
+            <div style="padding: 1.5rem;">`;
+        
+        let dailyTotal = 0;
+        const times = window.currentConfig.times || ['8:00 AM', '1:00 PM', '7:00 PM'];
+        const badgeColors = ['#fef3c7', '#dcfce7', '#fce7f3', '#e0e7ff'];
+        const badgeTextColors = ['#d97706', '#059669', '#db2777', '#4f46e5'];
+        
+        for (let i = 0; i < window.currentConfig.meals.length; i++) {
+            const mealType = window.currentConfig.meals[i];
+            const meal = day[mealType];
+            if (meal && meal.name) {
+                if (meal.calories) dailyTotal += meal.calories;
+                const mealTime = times[i] || '12:00 PM';
+                const cleanName = cleanMealName(meal.name);
+                const isCompleted = window.completedMealsCache[cleanName] && window.completedMealsCache[cleanName].completed === true;
+                const isLocked = isMealLocked(mealType, mealTime, isCompleted, isPastDay, isFutureDay);
+                
+                let benefitsHtml = '';
+                if (meal.ingredients && meal.ingredients.length > 0) {
+                    benefitsHtml = `<div id="benefits_${mealType}" class="ingredients-panel" style="display: none;">
+                        <div style="font-size:0.7rem; font-weight:bold; margin-bottom:0.5rem;">🌱 KEY INGREDIENTS & BENEFITS:</div>`;
+                    for (const ing of meal.ingredients) {
+                        benefitsHtml += `<div style="padding:0.5rem; background:white; border-radius:10px; margin-bottom:0.5rem;">
+                            <strong>🥬 ${escapeHtml(ing.name)}</strong>
+                            <p style="font-size:0.7rem; margin-top:0.2rem;">${escapeHtml(ing.benefit || 'Supports your health')}</p>
+                        </div>`;
+                    }
+                    benefitsHtml += `</div><button onclick="toggleBenefits('benefits_${mealType}')" class="view-benefits-btn">🌿 View Benefits</button>`;
+                }
+                
+                html += `<div class="meal-card ${isCompleted ? 'completed' : ''} ${isLocked ? 'locked' : ''}">
+                    <div>
+                        <span class="meal-badge" style="background:${badgeColors[i % badgeColors.length]}; color:${badgeTextColors[i % badgeTextColors.length]};">🕐 ${mealTime} - ${window.currentConfig.icons[i]} ${window.currentConfig.names[i]}</span>
+                    </div>
+                    <div class="meal-name">${escapeHtml(meal.name)}</div>
+                    <div class="meal-desc">${escapeHtml(meal.description || 'Delicious and healthy meal')}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 0.5rem;">
+                        <span class="meal-calories">🔥 ${meal.calories || 0} cal</span>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">`;
+                        
+                if (isCompleted) {
+                    html += `<button class="complete-btn" disabled style="background:#9ca3af; cursor:not-allowed;">✓ Completed</button>`;
+                } else if (isLocked) {
+                    html += `<button class="complete-btn" disabled style="background:#fee2e2; color:#dc2626; cursor:not-allowed;">🔒 Time Expired (Locked)</button>`;
+                } else {
+                    const escapedMealName = meal.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    html += `<button class="complete-btn" onclick="markMealComplete('${escapedMealName}', ${meal.calories || 0}, this)">✅ Mark as Completed (+10 pts)</button>`;
+                    html += `<button onclick="openReplaceModal(${window.currentDay}, '${mealType}', '${escapeHtml(meal.name)}', ${meal.calories || 0})" class="replace-btn">🔄 Don't Like? Replace</button>`;
+                }
+                
+                html += `</div>
+                    </div>
+                    ${benefitsHtml}
+                </div>`;
+            }
+        }
+        
+        html += `<div class="daily-summary"><div style="display:flex; justify-content:space-between;"><span>📊 Daily Total</span><span style="font-weight:bold;">${dailyTotal} / ${window.userTdee} cal</span></div></div></div></div>`;
+        if (window.mealPlanData.meal_tips) {
+            html += `<div style="background:linear-gradient(135deg,#667eea,#764ba2); border-radius:16px; padding:1rem; margin-top:1rem; color:white;">
+                <div><strong>💚 AI Health Coach:</strong> ${escapeHtml(window.mealPlanData.meal_tips)}</div>
+            </div>`;
+        }
+        document.getElementById('mealPlanContent').innerHTML = html;
+        updateMealStats();
+    }
+    
+    function toggleBenefits(benefitsId) {
+        const panel = document.getElementById(benefitsId);
+        if (panel) panel.style.display = panel.style.display === 'none' || panel.style.display === '' ? 'block' : 'none';
+    }
+    
+    window.openReplaceModal = function(day, mealType, mealName, calories) {
+        window.replacePendingData = { day, mealType, mealName, calories, reason: null };
+        document.getElementById('reasonModal').style.display = 'flex';
+    };
+    
+    window.closeReasonModal = function() {
+        document.getElementById('reasonModal').style.display = 'none';
+        window.replacePendingData = { day: null, mealType: null, mealName: null, calories: null, reason: null };
+    };
+    
+    window.selectReason = function(reason) {
+        window.replacePendingData.reason = reason;
+        document.getElementById('reasonModal').style.display = 'none';
+        document.getElementById('replaceModal').style.display = 'flex';
+        document.getElementById('replaceLoading').style.display = 'block';
+        document.getElementById('replaceContent').style.display = 'none';
+        
+        const reasonTextMap = {
+            'dont_like': "I don't like the taste. Suggest something completely different.",
+            'expensive': "Ingredients are too expensive. Suggest a budget-friendly alternative.",
+            'allergy': "I have food allergies. Suggest a safe alternative.",
+            'unavailable': "Ingredients not available. Suggest with common ingredients.",
+            'too_spicy': "Too spicy or bland. Suggest balanced flavors.",
+            'time_consuming': "Takes too long. Suggest quick recipe under 30 minutes."
+        };
+        
+        fetch('/api/replace-meal', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                day: window.replacePendingData.day,
+                meal_type: window.replacePendingData.mealType,
+                current_meal_name: window.replacePendingData.mealName,
+                reason: reason,
+                reason_text: reasonTextMap[reason]
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('replaceLoading').style.display = 'none';
+            document.getElementById('replaceContent').style.display = 'block';
+            if (data.success && data.replacement) {
+                window.replacePendingData.replacement = data.replacement;
+                document.getElementById('replaceMealName').innerText = data.replacement.name;
+                document.getElementById('replaceMealDesc').innerText = data.replacement.description || 'A healthy alternative';
+                document.getElementById('replaceMealCal').innerHTML = `🔥 ${data.replacement.calories} cal`;
+                document.getElementById('replaceReason').innerText = data.replacement.reason || 'Better suited to your preferences';
+                let ingredientsHtml = '<div style="display: flex; flex-direction: column; gap: 0.5rem;">';
+                if (data.replacement.ingredients && data.replacement.ingredients.length > 0) {
+                    for (const ing of data.replacement.ingredients) {
+                        ingredientsHtml += `<div style="padding: 0.5rem; background: #f0fdf4; border-radius: 10px; border-left: 3px solid #10b981;">
+                            <strong style="font-size:0.75rem;">🥬 ${escapeHtml(ing.name)}</strong>
+                            <p style="font-size:0.7rem; margin:0.2rem 0 0; color:#047857;">${escapeHtml(ing.benefit || 'Supports your health')}</p>
+                        </div>`;
+                    }
+                } else ingredientsHtml += '<div style="padding: 0.5rem;">✨ Customized for your health goals</div>';
+                ingredientsHtml += '</div>';
+                document.getElementById('ingredientsList').innerHTML = ingredientsHtml;
+            } else throw new Error('No replacement generated');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('replaceLoading').style.display = 'none';
+            document.getElementById('replaceContent').style.display = 'block';
+            const fallback = {
+                name: 'Vegetable Khichdi',
+                description: 'A nutritious replacement meal',
+                calories: Math.round(window.replacePendingData.calories * 0.9),
+                reason: 'This meal is better suited to your preferences',
+                ingredients: [{ name: 'Fresh Vegetables', benefit: 'Rich in vitamins' }]
+            };
+            window.replacePendingData.replacement = fallback;
+            document.getElementById('replaceMealName').innerText = fallback.name;
+            document.getElementById('replaceMealDesc').innerText = fallback.description;
+            document.getElementById('replaceMealCal').innerHTML = `🔥 ${fallback.calories} cal`;
+            document.getElementById('replaceReason').innerText = fallback.reason;
+            document.getElementById('ingredientsList').innerHTML = '<div>✨ Customized for your health goals</div>';
+        });
+    };
+    
+    window.closeReplaceModal = function() { document.getElementById('replaceModal').style.display = 'none'; };
+    
+    window.confirmReplace = function() {
+        if (!window.replacePendingData.replacement) { showToast('No replacement available', 'error'); window.closeReplaceModal(); return; }
+        if (!window.mealPlanData) { showToast('Error: No meal plan found', 'error'); window.closeReplaceModal(); return; }
+        
+        const dayKey = `day${window.replacePendingData.day}`;
+        const mealType = window.replacePendingData.mealType;
+        
+        if (window.mealPlanData[dayKey] && window.mealPlanData[dayKey][mealType]) {
+            window.mealPlanData[dayKey][mealType] = {
+                name: window.replacePendingData.replacement.name,
+                description: window.replacePendingData.replacement.description || 'A healthy and delicious meal',
+                calories: window.replacePendingData.replacement.calories,
+                ingredients: window.replacePendingData.replacement.ingredients || []
+            };
+            renderCurrentDay();
+            renderStreakTracker();
+            showToast(`✅ Meal replaced with ${window.replacePendingData.replacement.name}!`, 'success');
+            fetch('/api/save-meal-plan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ meal_plan: window.mealPlanData })
+            }).catch(err => console.error("Save error:", err));
+        }
+        window.closeReplaceModal();
+    };
+    
+    window.regeneratePlan = async function() {
+        const confirmed = confirm("⚠️ WARNING: Regenerating will create a NEW meal plan and you will LOSE all your current progress. Are you sure?");
+        if (!confirmed) return;
+        
+        const loadingDiv = document.getElementById('loading');
+        if (loadingDiv) loadingDiv.style.display = 'block';
+        try {
+            const resp = await fetch('/api/regenerate-meal-plan', { method: 'POST' });
+            const data = await resp.json();
+            if (data.success) {
+                window.mealPlanData = data.meal_plan;
+                window.completedMealsCache = {};
+                window.currentDay = getCurrentDayNumber();
+                renderCurrentDay();
+                renderStreakTracker();
+                showToast('🔄 New meal plan generated!', 'success');
+            }
+        } catch(e) { console.error('Error regenerating plan:', e); }
+        if (loadingDiv) loadingDiv.style.display = 'none';
+    };
+    
+    async function loadMealPlan() {
+        console.log("🔄 Loading meal plan from database...");
+        const loadingDiv = document.getElementById('loading');
+        const contentDiv = document.getElementById('mealPlanContent');
+        if (loadingDiv) loadingDiv.style.display = 'flex';
+        if (contentDiv) contentDiv.style.display = 'none';
+        
+        try {
+            await loadCompletedMeals();
+            
+            const resp = await fetch('/api/get-meal-plan');
+            const data = await resp.json();
+            
+            if (data.success && data.meal_plan) {
+                window.mealPlanData = data.meal_plan;
+                console.log("✅ Meal plan loaded");
+                
+                // FIXED: Use getCurrentDayNumber() instead of manual calculation
+                window.currentDay = getCurrentDayNumber();
+                console.log(`📌 Current day set to: ${window.currentDay}`);
+                
+                renderCurrentDay();
+                renderStreakTracker();
+                
+                if (loadingDiv) loadingDiv.style.display = 'none';
+                if (contentDiv) contentDiv.style.display = 'block';
+            } else {
+                console.log("No meal plan found, generating...");
+                await window.regeneratePlan();
+                if (loadingDiv) loadingDiv.style.display = 'none';
+                if (contentDiv) contentDiv.style.display = 'block';
+            }
+        } catch(e) { 
+            console.error('Error loading meal plan:', e); 
+            await window.regeneratePlan();
+            if (loadingDiv) loadingDiv.style.display = 'none';
+            if (contentDiv) contentDiv.style.display = 'block';
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("=== MEAL PLANNER INITIALIZED ===");
+        updateWaterDisplay();
+        const regenBtn = document.getElementById('regenerateBtn');
+        if (regenBtn) regenBtn.addEventListener('click', window.regeneratePlan);
+        loadMealPlan();
+        
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    });
+</script>
+{% endblock %}

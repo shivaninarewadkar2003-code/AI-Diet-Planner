@@ -1,0 +1,808 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - MealMate AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 1400px; margin: 0 auto; padding: 1.5rem;">
+    
+    <!-- Welcome Banner -->
+    <div style="background: linear-gradient(135deg, #059669, #10b981); border-radius: 24px; padding: 1.5rem 2rem; margin-bottom: 2rem; color: white;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h2 style="margin: 0; font-size: 1.5rem;">Good {{ greeting }}, {{ user.name if user and user.name else 'User' }}!</h2>
+                <p style="margin: 0.25rem 0 0; opacity: 0.9;">
+                    {% if greeting == "Morning" %}Start your day with a healthy breakfast! 🌅
+                    {% elif greeting == "Afternoon" %}Keep going! You're making amazing progress! 💪
+                    {% elif greeting == "Evening" %}Great work today! Stay consistent! 🌆
+                    {% else %}Rest well and prepare for another great day! 🌙{% endif %}
+                </p>
+            </div>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <button onclick="exportProgressData()" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.4rem 1rem; border-radius: 30px; cursor: pointer; font-size: 0.7rem;">
+                    📥 Export Progress
+                </button>
+                <div style="font-size: 3rem;">
+                    {% if greeting == "Morning" %}🌅
+                    {% elif greeting == "Afternoon" %}🌤️
+                    {% elif greeting == "Evening" %}🌆
+                    {% else %}🌙{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Motivational Quote -->
+    <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 20px; padding: 0.75rem 1rem; margin-bottom: 1.5rem; text-align: center;">
+        <span style="font-size: 1.2rem;">💪</span>
+        <span id="dailyQuote" style="font-size: 0.9rem; color: #92400e; font-weight: 500;">"Small daily improvements are the key to lasting results."</span>
+    </div>
+
+    <!-- Stats Cards Row -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        
+        <div style="background: var(--card-bg, white); border-radius: 20px; padding: 1rem; text-align: center; border: 1px solid var(--border-color, #e5e7eb);">
+            <div style="font-size: 0.7rem; color: var(--text-secondary, #6b7280);">BMI</div>
+            <div style="font-size: 2rem; font-weight: bold; color: #059669;">
+                {% if user.profile and user.profile.bmi %}
+                    {{ user.profile.bmi }}
+                {% else %}
+                    26.7
+                {% endif %}
+            </div>
+            <div style="font-size: 0.7rem; color: var(--text-secondary, #6b7280);">
+                {% if user.profile and user.profile.bmi_category %}
+                    {{ user.profile.bmi_category }}
+                {% else %}
+                    Overweight
+                {% endif %}
+            </div>
+        </div>
+        
+        <div style="background: var(--card-bg, white); border-radius: 20px; padding: 1rem; text-align: center; border: 1px solid var(--border-color, #e5e7eb);">
+            <div style="font-size: 0.7rem; color: var(--text-secondary, #6b7280);">TDEE</div>
+            <div style="font-size: 2rem; font-weight: bold; color: #059669;">
+                {% if user.profile and user.profile.tdee %}
+                    {{ user.profile.tdee }}
+                {% else %}
+                    1550
+                {% endif %}
+            </div>
+            <div style="font-size: 0.7rem; color: var(--text-secondary, #6b7280);">kcal/day</div>
+        </div>
+        
+        <div style="background: var(--card-bg, white); border-radius: 20px; padding: 1rem; text-align: center; border: 1px solid var(--border-color, #e5e7eb);">
+            <div style="font-size: 0.7rem; color: var(--text-secondary, #6b7280);">Current Weight</div>
+            <div style="font-size: 2rem; font-weight: bold; color: #059669;" id="currentWeightDisplay">
+                {% if user.profile and user.profile.weight_kg %}
+                    {{ user.profile.weight_kg }}
+                {% else %}
+                    70.0
+                {% endif %}
+            </div>
+            <div style="font-size: 0.7rem; color: var(--text-secondary, #6b7280);">kg</div>
+            <div style="font-size: 0.6rem; margin-top: 0.25rem;">
+                <a href="/profile" style="color: #059669; text-decoration: none;">Update in Profile →</a>
+            </div>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #059669, #10b981); border-radius: 20px; padding: 1rem; text-align: center; color: white;">
+            <div style="font-size: 1.5rem;">🍽️</div>
+            <div style="font-size: 2rem; font-weight: bold;" id="totalMeals">0</div>
+            <div style="font-size: 0.7rem;">Total Meals</div>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 20px; padding: 1rem; text-align: center; color: white;">
+            <div style="font-size: 1.5rem;">🎁</div>
+            <div style="font-size: 2rem; font-weight: bold;" id="rewardPoints">0</div>
+            <div style="font-size: 0.7rem;">Reward Points</div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Summary -->
+    <div style="display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 1rem; background: #f3f4f6; border-radius: 20px; padding: 0.75rem; margin-bottom: 2rem;">
+        <div style="text-align: center;">
+            <div style="font-size: 0.6rem; color: #6b7280;">WEEKLY MEALS</div>
+            <div style="font-weight: bold; color: #059669; font-size: 1.2rem;" id="weeklyTotalMeals">0</div>
+        </div>
+        <div style="text-align: center;">
+            <div style="font-size: 0.6rem; color: #6b7280;">DAYS ACTIVE</div>
+            <div style="font-weight: bold; color: #f59e0b; font-size: 1.2rem;" id="daysActive">0</div>
+        </div>
+        <div style="text-align: center;">
+            <div style="font-size: 0.6rem; color: #6b7280;">WEEKLY STREAK</div>
+            <div style="font-weight: bold; color: #8b5cf6; font-size: 1.2rem;" id="weeklyStreak">0</div>
+        </div>
+        <div style="text-align: center;">
+            <div style="font-size: 0.6rem; color: #6b7280;">AVG MEALS/DAY</div>
+            <div style="font-weight: bold; color: #10b981; font-size: 1.2rem;" id="avgMeals">0</div>
+        </div>
+    </div>
+
+    <!-- Health Score Cards - 3 in a row -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+        <div style="background: var(--card-bg, white); border-radius: 20px; padding: 1.25rem; border: 1px solid var(--border-color, #e5e7eb);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-size: 1.2rem;">🍬</span>
+                <span id="sugarStatus" style="font-size: 0.8rem; padding: 0.2rem 0.6rem; border-radius: 20px; background: #10b981; color: white;">Good</span>
+            </div>
+            <div style="font-weight: bold; margin-bottom: 0.25rem;">Blood Sugar Wellness</div>
+            <div style="background: #e5e7eb; border-radius: 20px; height: 8px; margin: 0.5rem 0;">
+                <div id="sugarScoreBar" style="width: 65%; background: #10b981; border-radius: 20px; height: 8px;"></div>
+            </div>
+            <p id="sugarMessage" style="font-size: 0.7rem; color: #10b981; margin-top: 0.5rem;">🌟 You're doing great! Keep going!</p>
+        </div>
+
+        <div style="background: var(--card-bg, white); border-radius: 20px; padding: 1.25rem; border: 1px solid var(--border-color, #e5e7eb);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-size: 1.2rem;">❤️</span>
+                <span id="heartStatus" style="font-size: 0.8rem; padding: 0.2rem 0.6rem; border-radius: 20px; background: #f59e0b; color: white;">Getting Better</span>
+            </div>
+            <div style="font-weight: bold; margin-bottom: 0.25rem;">Heart Wellness</div>
+            <div style="background: #e5e7eb; border-radius: 20px; height: 8px; margin: 0.5rem 0;">
+                <div id="heartScoreBar" style="width: 45%; background: #f59e0b; border-radius: 20px; height: 8px;"></div>
+            </div>
+            <p id="heartMessage" style="font-size: 0.7rem; color: #f59e0b; margin-top: 0.5rem;">💪 Small steps = Big progress!</p>
+        </div>
+
+        <div style="background: var(--card-bg, white); border-radius: 20px; padding: 1.25rem; border: 1px solid var(--border-color, #e5e7eb);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-size: 1.2rem;">💓</span>
+                <span id="bpStatus" style="font-size: 0.8rem; padding: 0.2rem 0.6rem; border-radius: 20px; background: #10b981; color: white;">Very Good</span>
+            </div>
+            <div style="font-weight: bold; margin-bottom: 0.25rem;">Blood Pressure Wellness</div>
+            <div style="background: #e5e7eb; border-radius: 20px; height: 8px; margin: 0.5rem 0;">
+                <div id="bpScoreBar" style="width: 75%; background: #10b981; border-radius: 20px; height: 8px;"></div>
+            </div>
+            <p id="bpMessage" style="font-size: 0.7rem; color: #10b981; margin-top: 0.5rem;">🎉 Fantastic! Keep maintaining!</p>
+        </div>
+    </div>
+
+    <!-- THREE GRAPHS ROW - All side by side -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+        
+        <!-- Weekly Meal Completion Chart -->
+        <div style="background: var(--card-bg, white); border-radius: 24px; padding: 1.25rem; border: 1px solid var(--border-color, #e5e7eb);">
+            <h3 style="margin: 0 0 1rem 0; font-size: 1rem;">🍽️ Weekly Meals</h3>
+            <div style="position: relative; height: 200px;">
+                <canvas id="mealChart"></canvas>
+            </div>
+            <div id="mealSummary" style="margin-top: 0.75rem; text-align: center; font-size: 0.7rem; color: #6b7280;">
+                Loading...
+            </div>
+        </div>
+
+        <!-- Weekly Water Intake Chart -->
+        <div style="background: var(--card-bg, white); border-radius: 24px; padding: 1.25rem; border: 1px solid var(--border-color, #e5e7eb);">
+            <h3 style="margin: 0 0 1rem 0; font-size: 1rem;">💧 Weekly Water</h3>
+            <div style="position: relative; height: 200px;">
+                <canvas id="waterChart"></canvas>
+            </div>
+            <div id="waterSummary" style="margin-top: 0.75rem; text-align: center; font-size: 0.7rem; color: #6b7280;">
+                Loading...
+            </div>
+        </div>
+
+        <!-- Weekly Fitness Chart - COMBINATION GRAPH -->
+        <div style="background: var(--card-bg, white); border-radius: 24px; padding: 1.25rem; border: 1px solid var(--border-color, #e5e7eb);">
+            <h3 style="margin: 0 0 1rem 0; font-size: 1rem;">💪 Weekly Fitness</h3>
+            <div style="position: relative; height: 200px;">
+                <canvas id="fitnessChart"></canvas>
+            </div>
+            <div id="fitnessSummary" style="margin-top: 0.75rem; text-align: center; font-size: 0.7rem; color: #6b7280;">
+                Loading...
+            </div>
+            <div style="margin-top: 0.25rem; display: flex; justify-content: center; gap: 1rem; font-size: 0.6rem;">
+                <span style="display: inline-flex; align-items: center; gap: 0.2rem;">
+                    <span style="width: 10px; height: 10px; background: #8b5cf6; border-radius: 2px;"></span> Minutes
+                </span>
+                <span style="display: inline-flex; align-items: center; gap: 0.2rem;">
+                    <span style="width: 15px; height: 2px; background: #f59e0b; border-style: dashed;"></span> Target
+                </span>
+                <span style="display: inline-flex; align-items: center; gap: 0.2rem;">
+                    <span style="width: 10px; height: 10px; background: #10b981; border-radius: 50%;"></span> Trend
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Meal Plan & Rewards Shop - 2 columns -->
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+        
+        <div style="background: var(--card-bg, white); border-radius: 24px; padding: 1.5rem; border: 1px solid var(--border-color, #e5e7eb);">
+            <h3 style="margin: 0 0 1rem 0;">🍽️ Today's Meal Plan</h3>
+            <div id="todayMealPlan" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #f0fdf4; border-radius: 12px;" id="breakfastRow">
+                    <span>☀️ Breakfast</span>
+                    <span id="breakfastCal" style="font-weight: bold; color: #059669;">Loading...</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #fef3c7; border-radius: 12px;" id="lunchRow">
+                    <span>🌤️ Lunch</span>
+                    <span id="lunchCal" style="font-weight: bold; color: #d97706;">Loading...</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #f3e8ff; border-radius: 12px;" id="dinnerRow">
+                    <span>🌙 Dinner</span>
+                    <span id="dinnerCal" style="font-weight: bold; color: #7c3aed;">Loading...</span>
+                </div>
+            </div>
+            <div style="margin-top: 1rem; text-align: center;">
+                <a href="/meal-planner" style="display: inline-block; background: #10b981; color: white; padding: 0.5rem 1rem; border-radius: 40px; text-decoration: none; font-size: 0.8rem;">
+                    View Full Meal Plan →
+                </a>
+            </div>
+            <div style="background: #f0fdf4; border-radius: 12px; padding: 0.5rem; margin-top: 1rem; text-align: center;">
+                <span style="font-size: 0.7rem;">⏰ Next meal:</span>
+                <span id="nextMeal" style="font-weight: bold; color: #059669; font-size: 0.8rem;">Lunch at 1:00 PM</span>
+            </div>
+        </div>
+
+        <div style="background: var(--card-bg, white); border-radius: 24px; padding: 1.5rem; border: 1px solid var(--border-color, #e5e7eb);">
+            <h3 style="margin: 0 0 1rem 0;">🎁 REWARDS SHOP</h3>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color, #e5e7eb);">
+                <div style="font-size: 0.85rem;">🛒 ₹50 OFF on Shopping</div>
+                <div><span style="color: #059669; font-size: 0.8rem;">100 pts</span> <button onclick="redeemReward('₹50 OFF on Shopping', 100)" class="redeem-btn">Redeem</button></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color, #e5e7eb);">
+                <div style="font-size: 0.85rem;">📄 Export Meal Plan as PDF</div>
+                <div><span style="color: #059669; font-size: 0.8rem;">100 pts</span> <button onclick="redeemReward('Export Meal Plan as PDF', 100)" class="redeem-btn">Redeem</button></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color, #e5e7eb);">
+                <div style="font-size: 0.85rem;">🚚 Free Delivery</div>
+                <div><span style="color: #059669; font-size: 0.8rem;">150 pts</span> <button onclick="redeemReward('Free Delivery', 150)" class="redeem-btn">Redeem</button></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0;">
+                <div style="font-size: 0.85rem;">🎁 ₹100 Gift Card</div>
+                <div><span style="color: #059669; font-size: 0.8rem;">300 pts</span> <button onclick="redeemReward('₹100 Gift Card', 300)" class="redeem-btn">Redeem</button></div>
+            </div>
+            
+            <div style="margin-top: 1rem; padding: 0.5rem; background: #fef3c7; border-radius: 12px; text-align: center; font-size: 0.65rem; color: #92400e;">
+                💡 Complete meals to earn more points!
+            </div>
+        </div>
+    </div>
+
+    <!-- Health News & Articles - Full width -->
+    <div style="background: var(--card-bg, white); border-radius: 24px; padding: 1.5rem; margin-top: 0; border: 1px solid var(--border-color, #e5e7eb);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+                <h3 style="margin: 0;">📰 Personalized Health News</h3>
+                <p style="margin: 0.25rem 0 0; font-size: 0.7rem; color: #6b7280;">News tailored to your health profile</p>
+            </div>
+            <button onclick="refreshNews()" id="refreshNewsBtn" style="background: #f3f4f6; border: none; padding: 0.3rem 0.8rem; border-radius: 20px; cursor: pointer; font-size: 0.7rem;">
+                🔄 Refresh
+            </button>
+        </div>
+        
+        <div id="newsContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;">
+            <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                📰 Loading personalized health news for you...
+            </div>
+        </div>
+        
+        <div style="margin-top: 1rem; text-align: center; font-size: 0.65rem; color: #9ca3af;">
+            Powered by AI | Personalized for your health goals
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let predictionChart = null;
+    let mealChart = null;
+    let waterChart = null;
+    let fitnessChart = null;
+    let userPoints = 0;
+    
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
+    // Quotes array
+    const quotes = [
+        "💪 Small daily improvements are the key to lasting results.",
+        "🌟 Your health is an investment, not an expense.",
+        "🔥 Don't stop until you're proud.",
+        "🥗 Healthy eating is a form of self-respect.",
+        "📈 Progress, not perfection.",
+        "🍽️ Every healthy meal is a step towards a better you."
+    ];
+    document.getElementById('dailyQuote').innerText = quotes[Math.floor(Math.random() * quotes.length)];
+    
+    // Update next meal reminder
+    function updateNextMeal() {
+        const now = new Date();
+        const currentHour = now.getHours();
+        let nextMeal = "", nextTime = "";
+        if (currentHour < 8) { nextMeal = "Breakfast"; nextTime = "8:00 AM"; }
+        else if (currentHour < 13) { nextMeal = "Lunch"; nextTime = "1:00 PM"; }
+        else if (currentHour < 19) { nextMeal = "Dinner"; nextTime = "7:00 PM"; }
+        else { nextMeal = "Breakfast"; nextTime = "8:00 AM (Tomorrow)"; }
+        document.getElementById('nextMeal').innerHTML = `${nextMeal} at ${nextTime}`;
+    }
+    updateNextMeal();
+    
+    // Export Progress
+    async function exportProgressData() {
+        try {
+            const response = await fetch('/api/get-weight-history');
+            const data = await response.json();
+            let csvContent = "Date,Weight (kg),Notes\n";
+            if (data.success && data.weight_history) {
+                data.weight_history.forEach(w => {
+                    csvContent += `${w.date},${w.weight},${w.notes || ''}\n`;
+                });
+            }
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `meal_mate_progress_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('📊 Progress exported successfully!', 'success');
+        } catch(e) { showToast('Error exporting data', 'error'); }
+    }
+    
+    // Load today's meal plan
+    async function loadTodayMealPlan() {
+        try {
+            const response = await fetch('/api/todays-meal-calories');
+            const data = await response.json();
+            if (data.success) {
+                document.getElementById('breakfastCal').innerHTML = data.breakfast + ' cal';
+                document.getElementById('lunchCal').innerHTML = data.lunch + ' cal';
+                document.getElementById('dinnerCal').innerHTML = data.dinner + ' cal';
+                updateDashboardMealsWithLock();
+            }
+        } catch (error) { console.error('Error loading meal plan:', error); }
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Load Personalized Health News
+    async function loadHealthNews() {
+        const newsContainer = document.getElementById('newsContainer');
+        const refreshBtn = document.getElementById('refreshNewsBtn');
+        
+        if (!newsContainer) return;
+        
+        newsContainer.innerHTML = '<div style="text-align: center; padding: 2rem; color: #6b7280;">📰 Loading personalized health news for you...</div>';
+        
+        try {
+            const response = await fetch('/api/personalized-news');
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch news');
+            }
+            
+            const data = await response.json();
+            
+            if (data.success && data.articles && data.articles.length > 0) {
+                const articles = data.articles.slice(0, 6);
+                
+                newsContainer.innerHTML = '';
+                
+                articles.forEach((article, index) => {
+                    const articleCard = document.createElement('div');
+                    articleCard.style.cssText = 'background: #f9fafb; border-radius: 16px; padding: 0.8rem; transition: transform 0.2s, box-shadow 0.2s; border: 1px solid #e5e7eb; cursor: pointer;';
+                    articleCard.onmouseover = () => {
+                        articleCard.style.transform = 'translateY(-2px)';
+                        articleCard.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                    };
+                    articleCard.onmouseout = () => {
+                        articleCard.style.transform = 'translateY(0)';
+                        articleCard.style.boxShadow = 'none';
+                    };
+                    
+                    articleCard.onclick = () => {
+                        const searchQuery = encodeURIComponent(article.title + ' health article');
+                        window.open(`https://www.google.com/search?q=${searchQuery}`, '_blank');
+                    };
+                    
+                    articleCard.innerHTML = `
+                        <div style="display: flex; gap: 0.5rem;">
+                            <div style="width: 45px; height: 45px; background: linear-gradient(135deg, #059669, #10b981); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: white;">
+                                📰
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; font-size: 0.75rem; margin-bottom: 0.2rem; line-height: 1.3; color: #1f2937;">${escapeHtml(article.title)}</div>
+                                <div style="font-size: 0.6rem; color: #059669;">${escapeHtml(article.source || 'Health News')}</div>
+                                <div style="font-size: 0.6rem; color: #4b5563; margin-top: 0.2rem;">${escapeHtml(article.description || 'Click to search for this article online')}</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    newsContainer.appendChild(articleCard);
+                });
+                
+                showToast('📰 Personalized health news loaded!', 'success');
+            } else {
+                newsContainer.innerHTML = `<div style="text-align: center; padding: 2rem; color: #6b7280;">📭 No news available.<br><span style="font-size: 0.7rem;">Try refreshing later!</span></div>`;
+            }
+            
+        } catch (error) {
+            console.error('Error loading news:', error);
+            newsContainer.innerHTML = `<div style="text-align: center; padding: 2rem; color: #ef4444;">⚠️ Unable to load news.<br><span style="font-size: 0.7rem;">Please check your connection.</span></div>`;
+        }
+    }
+    
+    async function refreshNews() {
+        const refreshBtn = document.getElementById('refreshNewsBtn');
+        if (refreshBtn) {
+            refreshBtn.textContent = '⏳ Loading...';
+            refreshBtn.disabled = true;
+        }
+        await loadHealthNews();
+        if (refreshBtn) {
+            refreshBtn.textContent = '🔄 Refresh';
+            refreshBtn.disabled = false;
+        }
+    }
+    
+    async function redeemReward(rewardName, pointsCost) {
+        if (userPoints < pointsCost) {
+            alert(`✨ You need ${pointsCost - userPoints} more points!`);
+            return;
+        }
+        if (confirm(`Redeem ${rewardName} for ${pointsCost} points?`)) {
+            try {
+                const response = await fetch('/api/redeem-reward', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reward_name: rewardName, points_cost: pointsCost })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert(`🎉 ${data.message} 🎉`);
+                    loadStats();
+                    loadHealthNews();
+                }
+            } catch (error) { alert('Network error'); }
+        }
+    }
+    
+    async function loadStats() {
+        try {
+            const response = await fetch('/api/user-journey-stats');
+            const data = await response.json();
+            if (data.success) {
+                document.getElementById('totalMeals').innerText = data.total_meals || 0;
+                document.getElementById('rewardPoints').innerText = data.total_points || 0;
+                userPoints = data.total_points || 0;
+            }
+        } catch (error) { console.error('Error loading stats:', error); }
+    }
+    
+    function initMealChart() {
+        const ctx = document.getElementById('mealChart');
+        if (!ctx) return;
+        mealChart = new Chart(ctx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: days,
+                datasets: [{
+                    label: 'Meals',
+                    data: [0, 0, 0, 0, 0, 0, 0],
+                    backgroundColor: '#10b981',
+                    borderRadius: 6,
+                    barPercentage: 0.7
+                }, {
+                    label: 'Target',
+                    data: [3, 3, 3, 3, 3, 3, 3],
+                    type: 'line',
+                    borderColor: '#f59e0b',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    fill: false
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: true,
+                scales: { y: { beginAtZero: true, max: 4, stepSize: 1, title: { display: false } } },
+                plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 10 } } } }
+            }
+        });
+    }
+    
+    function initWaterChart() {
+        const ctx = document.getElementById('waterChart');
+        if (!ctx) return;
+        waterChart = new Chart(ctx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: days,
+                datasets: [{
+                    label: 'Water (L)',
+                    data: [0, 0, 0, 0, 0, 0, 0],
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 6,
+                    barPercentage: 0.7
+                }, {
+                    label: 'Goal',
+                    data: [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
+                    type: 'line',
+                    borderColor: '#ef4444',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    fill: false
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: true,
+                scales: { y: { beginAtZero: true, max: 3, stepSize: 0.5, title: { display: false } } },
+                plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 10 } } } }
+            }
+        });
+    }
+    
+    function initFitnessChart() {
+        const ctx = document.getElementById('fitnessChart');
+        if (!ctx) return;
+        
+        fitnessChart = new Chart(ctx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: days,
+                datasets: [
+                    {
+                        label: 'Minutes',
+                        data: [0, 0, 0, 0, 0, 0, 0],
+                        type: 'bar',
+                        backgroundColor: '#8b5cf6',
+                        borderRadius: 6,
+                        barPercentage: 0.7,
+                        order: 2
+                    },
+                    {
+                        label: 'Target',
+                        data: [25, 25, 25, 25, 25, 25, 25],
+                        type: 'line',
+                        borderColor: '#f59e0b',
+                        borderWidth: 2,
+                        borderDash: [8, 6],
+                        pointRadius: 3,
+                        pointBackgroundColor: '#f59e0b',
+                        fill: false,
+                        order: 1
+                    },
+                    {
+                        label: 'Trend',
+                        data: [0, 0, 0, 0, 0, 0, 0],
+                        type: 'line',
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#10b981',
+                        fill: true,
+                        tension: 0.3,
+                        order: 0
+                    }
+                ]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: true,
+                scales: { y: { beginAtZero: true, max: 70, stepSize: 10, title: { display: false } } },
+                plugins: { legend: { position: 'top', labels: { boxWidth: 10, font: { size: 10 } } } }
+            }
+        });
+    }
+    
+    async function loadWeeklyData() {
+        try {
+            const response = await fetch('/api/weekly-stats');
+            const data = await response.json();
+            
+            if (data.success) {
+                const mealsData = data.meals || [0, 0, 0, 0, 0, 0, 0];
+                const waterData = data.water || [0, 0, 0, 0, 0, 0, 0];
+                
+                if (mealChart) {
+                    mealChart.data.datasets[0].data = mealsData;
+                    mealChart.update();
+                }
+                if (waterChart) {
+                    waterChart.data.datasets[0].data = waterData;
+                    waterChart.update();
+                }
+                
+                const totalMeals = mealsData.reduce((a, b) => a + b, 0);
+                const totalWater = waterData.reduce((a, b) => a + b, 0);
+                
+                document.getElementById('mealSummary').innerHTML = `📊 Total: ${totalMeals} meals`;
+                document.getElementById('waterSummary').innerHTML = `💧 Total: ${totalWater}L`;
+                document.getElementById('weeklyTotalMeals').innerText = totalMeals;
+                
+                const daysActive = mealsData.filter(m => m > 0).length;
+                let streak = 0;
+                for (let i = 6; i >= 0; i--) {
+                    if (mealsData[i] > 0) streak++;
+                    else break;
+                }
+                document.getElementById('daysActive').innerText = daysActive;
+                document.getElementById('weeklyStreak').innerText = streak;
+                document.getElementById('avgMeals').innerText = (totalMeals / 7).toFixed(1);
+            }
+        } catch (error) {
+            console.error('Error loading weekly data:', error);
+        }
+    }
+    
+    async function loadWeeklyFitnessData() {
+        try {
+            const fitnessData = await getDailyFitnessLogs();
+            const trendData = calculateMovingAverage(fitnessData, 3);
+            
+            if (fitnessChart) {
+                fitnessChart.data.datasets[0].data = fitnessData;
+                fitnessChart.data.datasets[2].data = trendData;
+                fitnessChart.update();
+            }
+            
+            const totalMinutes = fitnessData.reduce((a, b) => a + b, 0);
+            const avgMinutes = (totalMinutes / 7).toFixed(1);
+            const percentAchieved = Math.min(100, Math.round((totalMinutes / 175) * 100));
+            
+            const summaryElem = document.getElementById('fitnessSummary');
+            if (summaryElem) {
+                summaryElem.innerHTML = `💪 Total: ${totalMinutes} min | Avg: ${avgMinutes} min/day | ${percentAchieved}% of target`;
+                if (totalMinutes >= 150) summaryElem.style.color = '#10b981';
+                else if (totalMinutes >= 75) summaryElem.style.color = '#f59e0b';
+                else summaryElem.style.color = '#6b7280';
+            }
+        } catch (error) {
+            console.error('Error loading fitness data:', error);
+        }
+    }
+    
+    function calculateMovingAverage(data, windowSize) {
+        const result = [];
+        for (let i = 0; i < data.length; i++) {
+            let sum = 0, count = 0;
+            for (let j = Math.max(0, i - 1); j <= Math.min(data.length - 1, i + 1); j++) {
+                sum += data[j];
+                count++;
+            }
+            result.push(count > 0 ? Math.round(sum / count) : 0);
+        }
+        return result;
+    }
+    
+    async function getDailyFitnessLogs() {
+        const logs = [0, 0, 0, 0, 0, 0, 0];
+        try {
+            const today = new Date();
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1));
+            startOfWeek.setHours(0, 0, 0, 0);
+            
+            for (let i = 0; i < 7; i++) {
+                const checkDate = new Date(startOfWeek);
+                checkDate.setDate(startOfWeek.getDate() + i);
+                const dateStr = checkDate.toISOString().split('T')[0];
+                const response = await fetch(`/api/get-fitness-log-by-date?date=${dateStr}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) logs[i] = data.minutes || 0;
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching daily logs:', error);
+        }
+        return logs;
+    }
+    
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.style.cssText = `position:fixed; bottom:20px; right:20px; background:${type === 'success' ? '#10b981' : '#ef4444'}; color:white; padding:10px 16px; border-radius:10px; z-index:10000; animation:slideIn 0.3s ease; font-size:0.8rem;`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+    
+    // Meal Lock Logic
+    function parseTimeToMinutes(timeStr) {
+        let hour = parseInt(timeStr.split(':')[0]);
+        const minute = parseInt(timeStr.split(':')[1].split(' ')[0]);
+        const ampm = timeStr.split(' ')[1];
+        if (ampm === 'PM' && hour !== 12) hour += 12;
+        if (ampm === 'AM' && hour === 12) hour = 0;
+        return hour * 60 + minute;
+    }
+
+    function isMealLocked(mealTime) {
+        const now = new Date();
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        const mealMinutes = parseTimeToMinutes(mealTime);
+        const lockMinutes = mealMinutes + 90;
+        return currentMinutes > lockMinutes;
+    }
+
+    function getTodayMealStatus() {
+        const mealTimes = { breakfast: "8:00 AM", lunch: "1:00 PM", dinner: "7:00 PM" };
+        const status = {};
+        for (const [meal, time] of Object.entries(mealTimes)) {
+            status[meal] = isMealLocked(time) ? "locked" : "available";
+        }
+        return status;
+    }
+
+    async function updateDashboardMealsWithLock() {
+        const status = getTodayMealStatus();
+        const breakfastDiv = document.querySelector('#todayMealPlan > div:first-child');
+        const lunchDiv = document.querySelector('#todayMealPlan > div:nth-child(2)');
+        const dinnerDiv = document.querySelector('#todayMealPlan > div:nth-child(3)');
+        
+        if (breakfastDiv && status.breakfast === "locked") {
+            breakfastDiv.style.opacity = "0.6";
+            breakfastDiv.style.background = "#fee2e2";
+            breakfastDiv.innerHTML = `<span>☀️ Breakfast</span><span style="font-weight: bold; color: #dc2626;">🔒 Expired</span>`;
+        }
+        if (lunchDiv && status.lunch === "locked") {
+            lunchDiv.style.opacity = "0.6";
+            lunchDiv.style.background = "#fee2e2";
+            lunchDiv.innerHTML = `<span>🌤️ Lunch</span><span style="font-weight: bold; color: #dc2626;">🔒 Expired</span>`;
+        }
+        if (dinnerDiv && status.dinner === "locked") {
+            dinnerDiv.style.opacity = "0.6";
+            dinnerDiv.style.background = "#fee2e2";
+            dinnerDiv.innerHTML = `<span>🌙 Dinner</span><span style="font-weight: bold; color: #dc2626;">🔒 Expired</span>`;
+        }
+    }
+    
+    // Initialize everything
+    document.addEventListener('DOMContentLoaded', function() {
+        initMealChart();
+        initWaterChart();
+        initFitnessChart();
+        loadStats();
+        loadWeeklyData();
+        loadWeeklyFitnessData();
+        loadTodayMealPlan();
+        loadHealthNews();
+        
+        setInterval(() => {
+            updateDashboardMealsWithLock();
+            updateNextMeal();
+        }, 60000);
+    });
+</script>
+
+<style>
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(100px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    .redeem-btn {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        padding: 0.2rem 0.6rem;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 0.65rem;
+        margin-left: 0.5rem;
+        transition: transform 0.2s;
+    }
+    .redeem-btn:hover {
+        transform: scale(1.05);
+    }
+    canvas {
+        max-height: 200px;
+        width: 100% !important;
+    }
+    @media (max-width: 900px) {
+        .redeem-btn { font-size: 0.55rem; padding: 0.15rem 0.4rem; }
+        #fitnessChart { height: 200px !important; }
+    }
+</style>
+{% endblock %}

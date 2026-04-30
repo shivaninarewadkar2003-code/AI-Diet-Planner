@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Help & FAQ - MealMate AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto; padding: 1.5rem;">
+    <h1 style="margin-bottom: 0.5rem; color: var(--text-primary, #1f2937);">❓ Help & FAQ</h1>
+    <p style="color: var(--text-secondary, #6b7280); margin-bottom: 2rem;">Find answers to common questions or ask our AI assistant</p>
+    
+    <!-- FAQ Accordion -->
+    <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem;">
+        
+        <details style="background: var(--card-bg, white); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+            <summary style="font-weight: bold; cursor: pointer; color: var(--text-primary, #1f2937);">🍽️ How do I complete a meal?</summary>
+            <p style="margin-top: 0.75rem; color: var(--text-secondary, #4b5563);">Go to <strong style="color: var(--text-primary, #1f2937);">Meal Planner</strong> → Click <strong style="color: var(--text-primary, #1f2937);">"Mark as Completed (+10 pts)"</strong> on any meal → You'll earn 10 points instantly!</p>
+        </details>
+        
+        <details style="background: var(--card-bg, white); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+            <summary style="font-weight: bold; cursor: pointer; color: var(--text-primary, #1f2937);">🎁 How are points calculated?</summary>
+            <p style="margin-top: 0.75rem; color: var(--text-secondary, #4b5563);">Each completed meal = <strong style="color: var(--text-primary, #1f2937);">10 points</strong>. Complete all 3 meals daily for bonus points! Points can be redeemed in the Shopping section.</p>
+        </details>
+        
+        <details style="background: var(--card-bg, white); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+            <summary style="font-weight: bold; cursor: pointer; color: var(--text-primary, #1f2937);">🤖 How does the AI meal plan work?</summary>
+            <p style="margin-top: 0.75rem; color: var(--text-secondary, #4b5563);">Our AI generates personalized meals based on your <strong style="color: var(--text-primary, #1f2937);">health conditions, dietary preferences, and calorie needs</strong>. Each meal is medically appropriate for your profile.</p>
+        </details>
+        
+        <details style="background: var(--card-bg, white); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+            <summary style="font-weight: bold; cursor: pointer; color: var(--text-primary, #1f2937);">🔄 Can I change my meal plan?</summary>
+            <p style="margin-top: 0.75rem; color: var(--text-secondary, #4b5563);">Yes! Go to <strong style="color: var(--text-primary, #1f2937);">Meal Planner</strong> → Click <strong style="color: var(--text-primary, #1f2937);">"Regenerate Meal Plan"</strong> to create a new personalized plan.</p>
+        </details>
+        
+        <details style="background: var(--card-bg, white); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+            <summary style="font-weight: bold; cursor: pointer; color: var(--text-primary, #1f2937);">⚖️ How do I update my weight?</summary>
+            <p style="margin-top: 0.75rem; color: var(--text-secondary, #4b5563);">Go to <strong style="color: var(--text-primary, #1f2937);">Profile</strong> → Update your weight in the form → Click <strong style="color: var(--text-primary, #1f2937);">Save Changes</strong>.</p>
+        </details>
+        
+        <details style="background: var(--card-bg, white); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+            <summary style="font-weight: bold; cursor: pointer; color: var(--text-primary, #1f2937);">💧 How do I track water intake?</summary>
+            <p style="margin-top: 0.75rem; color: var(--text-secondary, #4b5563);">On the <strong style="color: var(--text-primary, #1f2937);">Meal Planner</strong> page, use the water tracker card to add 250ml, 500ml, or 1L at a time.</p>
+        </details>
+        
+        <details style="background: var(--card-bg, white); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+            <summary style="font-weight: bold; cursor: pointer; color: var(--text-primary, #1f2937);">🛒 How do I redeem reward points?</summary>
+            <p style="margin-top: 0.75rem; color: var(--text-secondary, #4b5563);">Go to <strong style="color: var(--text-primary, #1f2937);">Shopping</strong> → Choose a reward → Click <strong style="color: var(--text-primary, #1f2937);">Redeem</strong> → Enjoy your discount!</p>
+        </details>
+        
+        <details style="background: var(--card-bg, white); border-radius: 16px; padding: 1rem; border: 1px solid var(--border-color, #e5e7eb);">
+            <summary style="font-weight: bold; cursor: pointer; color: var(--text-primary, #1f2937);">📊 What does the Progress page show?</summary>
+            <p style="margin-top: 0.75rem; color: var(--text-secondary, #4b5563);">View your <strong style="color: var(--text-primary, #1f2937);">total meals, points, rank, weekly charts, and health scores</strong> all in one place!</p>
+        </details>
+    </div>
+    
+    <!-- Contact Support -->
+    <div style="background: var(--card-bg, #f0fdf4); border-radius: 20px; padding: 1.5rem; text-align: center; border: 1px solid var(--border-color, #e5e7eb);">
+        <h3 style="margin: 0 0 0.5rem 0; color: var(--text-primary, #1f2937);">Still have questions?</h3>
+        <p style="margin-bottom: 1rem; color: var(--text-secondary, #6b7280);">Our support team is here to help!</p>
+        <a href="mailto:support@mealmate.ai" style="background: #10b981; color: white; padding: 0.6rem 1.5rem; border-radius: 40px; text-decoration: none;">📧 Contact Support</a>
+    </div>
+</div>
+
+<style>
+    /* FAQ Details Styling */
+    details summary {
+        list-style: none;
+        cursor: pointer;
+    }
+    details summary::-webkit-details-marker {
+        display: none;
+    }
+    details summary::before {
+        content: '▶ ';
+        color: #10b981;
+        font-size: 0.9rem;
+    }
+    details[open] summary::before {
+        content: '▼ ';
+    }
+    details:hover {
+        background: var(--notification-hover, #f9fafb);
+        transition: background 0.2s ease;
+    }
+    
+    /* Dark mode specific overrides */
+    body.dark-mode details {
+        background: var(--card-bg, #1a1f2e);
+        border-color: var(--border-color, #2d3748);
+    }
+    body.dark-mode details summary {
+        color: var(--text-primary, #e5e7eb);
+    }
+    body.dark-mode details p {
+        color: var(--text-secondary, #9ca3af);
+    }
+    body.dark-mode details p strong {
+        color: var(--text-primary, #e5e7eb);
+    }
+</style>
+
+<script>
+    // Chatbot functionality if needed
+    function toggleChat() {
+        const chatWindow = document.getElementById('chatWindow');
+        if (chatWindow) {
+            if (chatWindow.style.display === 'none' || chatWindow.style.display === '') {
+                chatWindow.style.display = 'flex';
+            } else {
+                chatWindow.style.display = 'none';
+            }
+        }
+    }
+</script>
+{% endblock %}
